@@ -1,120 +1,113 @@
 import Link from 'next/link'
 
-export default function ExplorMore() {
+export default function ExploreMore() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* Navigation */}
-      <nav className="flex justify-between items-center px-8 py-6 max-w-6xl mx-auto">
-        <Link href="/" className="text-2xl font-bold tracking-tight text-gray-900">
-          <span className="dot"></span>Dot the Door
+    <main className="min-h-screen bg-white flex flex-col">
+      {/* Logo Section */}
+      <div className="pt-16 pb-8 text-center">
+        <Link href="/" className="inline-block">
+          <h1 className="text-4xl md:text-5xl font-light tracking-tight">
+            <span className="inline-block w-4 h-4 md:w-5 md:h-5 bg-red-accent rounded-full mr-1 align-middle relative -top-1"></span>
+            <span>the Door</span>
+          </h1>
         </Link>
-        <Link 
-          href="/" 
-          className="px-6 py-2 border border-gray-300 rounded-full hover:bg-gray-100 transition-all text-gray-700"
-        >
-          Home
-        </Link>
-      </nav>
+      </div>
 
-      {/* Content */}
-      <article className="max-w-3xl mx-auto px-8 py-16">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-12 leading-tight">
-          The Philosophy Behind <br/>
-          <span className="gradient-text">Dot the Door</span>
-        </h1>
+      {/* Divider */}
+      <div className="w-full border-t border-gray-200"></div>
 
-        <div className="prose prose-lg text-gray-600 space-y-6">
-          <p className="text-xl leading-relaxed">
-            Dot the Door is built on a simple but powerful idea:
-          </p>
+      {/* Main Content */}
+      <div className="flex-1 px-6 py-16">
+        <article className="max-w-2xl mx-auto space-y-8">
+          <h2 className="text-3xl md:text-4xl font-medium text-gray-900 text-center">
+            The Philosophy Behind <span className="dot-red">Dot the Door</span>
+          </h2>
 
-          <p className="text-lg leading-relaxed">
-            Every moment in life is made of sentences—choices, actions, feelings, and the stories 
-            that follow them. Some are short, some are long. Some we write quickly, some we wrestle 
-            with for years.
-          </p>
-
-          <p className="text-lg leading-relaxed font-medium text-gray-800">
-            But every sentence, no matter how complex or emotional, eventually ends with a dot.
-          </p>
-
-          <p className="text-2xl font-bold text-gray-900 py-4">
-            And that dot is not an ending. <br/>
-            <span className="gradient-text">It's a door.</span>
-          </p>
-
-          <ul className="space-y-4 text-lg">
-            <li className="flex items-start gap-3">
-              <span className="dot mt-2 flex-shrink-0"></span>
-              <span>A door you can choose to open.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="dot mt-2 flex-shrink-0"></span>
-              <span>A door that leads to who you want to become next.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="dot mt-2 flex-shrink-0"></span>
-              <span>A door that turns "maybe one day" into today.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="dot mt-2 flex-shrink-0"></span>
-              <span>A door that invites you to step into unrealized potential, untried opportunities, unexplored versions of yourself.</span>
-            </li>
-          </ul>
-
-          <div className="border-l-4 border-purple-500 pl-6 py-4 my-8 bg-purple-50 rounded-r-lg">
-            <p className="text-lg text-gray-700">
-              Dot the Door isn't about escaping the past.<br/>
-              <strong>It's about honoring it—then choosing what comes next with intention.</strong>
+          <div className="space-y-6 text-lg leading-relaxed text-gray-700">
+            <p>
+              Dot the Door is built on a simple but powerful idea:
             </p>
+
+            <p>
+              Every moment in life is made of sentences—choices, actions, feelings, and the stories that follow them. Some are short, some are long. Some we write quickly, some we wrestle with for years.
+            </p>
+
+            <p className="font-medium text-gray-900">
+              But every sentence, no matter how complex or emotional, eventually ends with a dot.
+            </p>
+
+            <p className="text-2xl font-medium text-gray-900 py-4">
+              And that dot is not an ending.<br/>
+              <span className="dot-red">It's a door.</span>
+            </p>
+
+            <ul className="space-y-3 pl-0">
+              <li className="flex items-start gap-3">
+                <span className="inline-block w-2 h-2 bg-red-accent rounded-full mt-2.5 flex-shrink-0"></span>
+                <span>A door you can choose to open.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="inline-block w-2 h-2 bg-red-accent rounded-full mt-2.5 flex-shrink-0"></span>
+                <span>A door that leads to who you want to become next.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="inline-block w-2 h-2 bg-red-accent rounded-full mt-2.5 flex-shrink-0"></span>
+                <span>A door that turns "maybe one day" into today.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="inline-block w-2 h-2 bg-red-accent rounded-full mt-2.5 flex-shrink-0"></span>
+                <span>A door that invites you to step into unrealized potential, untried opportunities, unexplored versions of yourself.</span>
+              </li>
+            </ul>
+
+            <blockquote className="border-l-4 border-red-accent pl-6 py-2 my-8 bg-gray-50">
+              <p>
+                Dot the Door isn't about escaping the past.<br/>
+                <strong>It's about honoring it—then choosing what comes next with intention.</strong>
+              </p>
+            </blockquote>
+
+            <p>It's a philosophy for people who:</p>
+
+            <ul className="space-y-2 text-gray-700">
+              <li>• feel a shift coming,</li>
+              <li>• dream of something more,</li>
+              <li>• sense that their next chapter has been waiting patiently,</li>
+              <li>• or simply want to give themselves permission to start.</li>
+            </ul>
+
+            <div className="py-8 text-center">
+              <p className="text-xl text-gray-800 font-medium">
+                Your life isn't a single story.
+              </p>
+              <p className="text-gray-600 mt-2">
+                It's a collection of chapters, sentences, and dots—<br/>
+                each one offering another doorway to step through.
+              </p>
+            </div>
+
+            <div className="bg-gray-900 text-white p-8 rounded-lg text-center">
+              <p className="text-lg">
+                This is your space to choose, reset, explore, and move forward—<br/>
+                <span className="text-xl font-semibold">one dot, one door at a time.</span>
+              </p>
+            </div>
           </div>
 
-          <p className="text-lg leading-relaxed">
-            It's a philosophy for people who:
-          </p>
-
-          <ul className="space-y-3 text-lg text-gray-700">
-            <li>• feel a shift coming,</li>
-            <li>• dream of something more,</li>
-            <li>• sense that their next chapter has been waiting patiently,</li>
-            <li>• or simply want to give themselves permission to start.</li>
-          </ul>
-
-          <div className="py-8 text-center">
-            <p className="text-xl text-gray-800 font-medium">
-              Your life isn't a single story.
-            </p>
-            <p className="text-lg text-gray-600 mt-2">
-              It's a collection of chapters, sentences, and dots—<br/>
-              each one offering another doorway to step through.
-            </p>
+          {/* Back link */}
+          <div className="pt-8 text-center">
+            <Link href="/" className="link-red text-base font-medium">
+              ← Back to Home
+            </Link>
           </div>
-
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-8 rounded-2xl text-center">
-            <p className="text-xl font-medium">
-              This is your space to choose, reset, explore, and move forward—<br/>
-              <span className="text-2xl font-bold">one dot, one door at a time.</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Back button */}
-        <div className="mt-16 text-center">
-          <Link 
-            href="/"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gray-900 text-white rounded-full font-semibold hover:bg-gray-800 transition-all"
-          >
-            <svg className="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-            Back to Home
-          </Link>
-        </div>
-      </article>
+        </article>
+      </div>
 
       {/* Footer */}
-      <footer className="py-8 text-center text-gray-400 text-sm">
-        <p>© 2026 Dot the Door. All rights reserved.</p>
+      <footer className="py-8 text-center">
+        <a href="mailto:info@dotthedoor.com" className="text-gray-600 hover:text-gray-900 text-sm">
+          info@dotthedoor.com
+        </a>
       </footer>
     </main>
   )

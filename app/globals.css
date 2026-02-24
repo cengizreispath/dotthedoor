@@ -3,32 +3,25 @@
 @tailwind utilities;
 
 :root {
-  --foreground: #1a1a2e;
-  --background: #fafafa;
+  --red-accent: #cc2525;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: 'Georgia', serif;
+  font-family: var(--font-jakarta), 'Plus Jakarta Sans', sans-serif;
+  background: #fff;
+  color: #1a1a1a;
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.dot-red {
+  color: var(--red-accent);
 }
 
-.hero-gradient {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+.link-red {
+  color: var(--red-accent);
+  text-decoration: none;
+  transition: opacity 0.2s;
 }
 
-.dot {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 50%;
-  margin-right: 4px;
+.link-red:hover {
+  opacity: 0.8;
 }

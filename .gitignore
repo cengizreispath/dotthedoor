@@ -1,1 +1,29 @@
-node_modules\n.next\n.env\n.env.local
+# Dependencies
+node_modules/
+
+# Build
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug
+npm-debug.log*
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
