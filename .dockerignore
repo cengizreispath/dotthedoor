@@ -1,4 +1,9 @@
 node_modules
 .next
 .git
+.claude
+prototype
 *.md
+.env
+.env.*
+!.env.example

@@ -1,0 +1,1206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Dot the Door — prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Plus+Jakarta+Sans:ital,wght@0,300..600;1,300..500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..600,0..100;1,9..144,300..500,0..100&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F5F2EA; --ink:#1B1A17; --ink-2:#3d3a33; --muted:#6b665c; --rule:#d9d2c3; --red:#CC2525;
+  --serif:'Newsreader','Iowan Old Style',Georgia,serif;
+  --sans:'Plus Jakarta Sans',system-ui,sans-serif;
+  --hand:'Nanum Pen Script','Bradley Hand',cursive;
+  --gutter:clamp(20px,6.5vw,112px);
+  --display-w:400; --tracking:-.02em;
+}
+html[data-font="jakarta"]{--serif:'Plus Jakarta Sans',system-ui,sans-serif;--display-w:300;--tracking:-.035em}
+html[data-font="fraunces"]{--serif:'Fraunces',Georgia,serif;--display-w:350;--tracking:-.015em}
+html[data-font="fraunces"] body{font-variation-settings:'SOFT' 100}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);min-height:100svh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:60;opacity:.55;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .3  0 0 0 0 .2  0 0 0 .07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.p{color:var(--red)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--red);outline-offset:4px;border-radius:4px}
+
+/* skip links */
+.skiplink{position:absolute;left:12px;top:-60px;z-index:50;background:var(--ink);color:var(--paper);padding:10px 14px;border-radius:8px;text-decoration:none;font-size:14px}
+.skiplink:focus{top:12px}
+.skip{position:fixed;right:clamp(16px,4vw,40px);bottom:clamp(16px,4vh,32px);z-index:40;font:500 14px var(--sans);background:var(--paper);border:1px solid var(--ink);border-radius:999px;padding:10px 20px;cursor:pointer}
+.skip:hover{background:var(--ink);color:var(--paper)}
+
+/* nav */
+.nav{position:relative;z-index:5;height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 var(--gutter)}
+.logo{font:300 23px var(--sans);color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;letter-spacing:-.01em}
+.logo-dot{width:.4em;height:.4em;border-radius:50%;background:var(--red);display:inline-block;margin-right:.14em;transform:translateY(.05em)}
+.navlink{font:400 14px var(--sans);color:var(--ink-2);text-decoration:none;margin-left:clamp(16px,3vw,32px);position:relative;padding:8px 0}
+.navlink:hover{color:var(--ink)}
+.navlink[aria-current="page"]::after{content:'';position:absolute;left:50%;bottom:-2px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--red)}
+
+/* stage */
+.stage{position:relative;z-index:1;overflow:clip;min-height:calc(100svh - 68px)}
+.stage.pending{visibility:hidden}
+.world{position:absolute;left:0;top:0;width:100%;height:100%;will-change:transform}
+.ink{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.ink .lines{fill:none;stroke:var(--red);stroke-linecap:round;stroke-linejoin:round}
+.ink .arrow{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1}
+.ink .arrow.on{stroke-dashoffset:0}
+.ink .dpath{fill:none;stroke:var(--red);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;opacity:.38;transition:opacity .3s,stroke-width .3s}
+.ink .dpath.shown{stroke-dashoffset:0}
+.ink .dpath.on{opacity:.95;stroke-width:2}
+.ln,.phrase{position:absolute;white-space:nowrap;font-family:var(--serif);font-weight:var(--display-w);line-height:1;letter-spacing:var(--tracking);font-optical-sizing:auto;color:var(--ink)}
+.probe{display:inline-block;width:0;height:0}
+.dotslot{display:inline-block;width:.24em;height:0}
+.bigdot{position:absolute;border-radius:50%;background:var(--red);transform:scale(0)}
+.phrase .ghost{opacity:.2}
+.phrase .inked{position:absolute;left:0;top:0}
+.label{position:absolute;font-family:var(--hand);color:var(--ink);white-space:nowrap;line-height:1;clip-path:inset(-30% 100% -30% -10%)}
+.label.on{clip-path:inset(-30% 0 -30% -10%)}
+.cin{position:absolute;overflow:visible;pointer-events:none;color:var(--red)}
+
+.is-write .home-only{display:none!important}
+.stage:not(.is-write) .write-only{display:none!important}
+
+/* doors */
+.doors{position:absolute;visibility:hidden}
+.doors.on{visibility:visible}
+.doors .q{font:400 clamp(30px,2.6vw,38px)/1 var(--hand);margin:0 0 10px;transform:rotate(-1.5deg);transform-origin:left}
+.doors ul{list-style:none;margin:0;padding:0}
+.door{display:block;width:100%;text-align:left;background:none;border:0;padding:10px 0;font-family:var(--serif);font-size:clamp(21px,1.75vw,27px);line-height:1.2;letter-spacing:-.01em;cursor:pointer;transition:transform .3s cubic-bezier(.3,.7,.2,1)}
+.door:hover,.door:focus-visible{transform:translateX(6px)}
+.door:focus-visible{outline-offset:6px}
+.mob .door{padding:15px 0;border-top:1px solid var(--rule);font-size:21px}
+.mob .door:hover{transform:none}
+
+/* bubble */
+.bubble{position:absolute;visibility:hidden;opacity:0;transform:translateY(6px) scale(.98);transform-origin:12% 100%;transition:opacity .5s,transform .5s cubic-bezier(.3,1.3,.5,1),visibility 0s .5s;padding:15px 20px 17px;background:var(--paper);border:1.5px solid var(--ink);border-radius:24px}
+.bubble.on{visibility:visible;opacity:1;transform:none;transition:opacity .5s,transform .5s cubic-bezier(.3,1.3,.5,1),visibility 0s}
+.bubble p{margin:0;font:italic 400 19px/1.35 var(--serif)}
+.bubble .tail{position:absolute;width:24px;height:22px;overflow:visible}
+.bubble .tail path{fill:var(--paper);stroke:var(--ink);stroke-width:1.5;stroke-linejoin:round}
+.bubble .tail .cover{stroke:var(--paper);stroke-width:3;fill:none}
+
+.replay{position:absolute;font:400 13px var(--sans);color:var(--muted);background:none;border:0;cursor:pointer;text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:4px;padding:8px 0}
+.replay:hover{color:var(--ink)}
+
+/* mini doors (direct editor) */
+.mini{position:absolute}
+.mini .mini-q{font:400 26px/1 var(--hand);margin:0 0 8px;color:var(--ink-2)}
+.mini ul{list-style:none;margin:0;padding:0}
+.mini-door{background:none;border:0;padding:6px 0;font:400 18px/1.3 var(--serif);color:var(--ink-2);cursor:pointer;text-align:left}
+.mini-door:hover{color:var(--ink)}
+.mob .mini ul{display:flex;flex-wrap:wrap;gap:8px}
+.mob .mini-door{border:1px solid var(--rule);border-radius:999px;padding:8px 14px;font-size:16px}
+
+/* panel */
+.panel{position:absolute;visibility:hidden;transition:top .4s cubic-bezier(.3,.7,.2,1)}
+.panel.on{visibility:visible}
+.panel.enter{animation:rise .6s cubic-bezier(.2,.7,.2,1) both}
+.prompt{font:400 clamp(23px,2vw,29px)/1.22 var(--serif);letter-spacing:-.012em;margin:0 0 22px;max-width:24ch;outline:none}
+.mob .prompt{font-size:22px;max-width:none}
+.editor{position:relative}
+.editor textarea,.mirror{font-family:var(--serif);font-size:clamp(20px,1.65vw,24px);line-height:1.55;padding:6px 0 14px;margin:0;border:0;border-bottom:1px solid transparent;width:100%;letter-spacing:0;white-space:pre-wrap;overflow-wrap:break-word;word-break:normal;font-weight:400;font-optical-sizing:auto;text-rendering:optimizeLegibility}
+.mirror{position:absolute;left:0;top:0;right:0;bottom:0;color:var(--ink);pointer-events:none}
+.editor textarea{position:relative;display:block;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:var(--ink);resize:none;outline:none;min-height:calc(3*1.55em + 21px);overflow:hidden;border-radius:0}
+.editor textarea::placeholder{color:transparent;-webkit-text-fill-color:transparent}
+.mirror .ph{color:var(--muted);font-style:italic;margin-left:1.6em}
+.editor textarea::selection{background:rgba(204,37,37,.2);color:transparent;-webkit-text-fill-color:transparent}
+.editor:focus-within::before{content:'';position:absolute;left:-15px;top:calc(.775em + 2px);width:6px;height:6px;margin-top:-3px;border-radius:50%;background:var(--red);font-size:clamp(20px,1.65vw,24px)}
+
+.mirror .ghostp{color:transparent}
+.mirror .enddot{display:inline-block;width:0;height:0;position:relative;vertical-align:baseline}
+.mirror .enddot::after{content:'';position:absolute;left:.06em;bottom:-.005em;width:.2em;height:.2em;border-radius:50%;background:var(--red);animation:pop .45s cubic-bezier(.3,1.5,.5,1) both}
+.mirror .enddot.over::after{left:-.2em}
+.dotrow{display:flex;align-items:center;gap:14px;margin-top:16px}
+.hint{flex:1;margin:0;font:400 14px/1.4 var(--sans);color:var(--muted)}
+.count{font:500 12px var(--sans);color:var(--muted);font-variant-numeric:tabular-nums}
+.dotbtn{width:52px;height:52px;flex:none;border-radius:50%;border:2px solid var(--red);background:transparent;cursor:pointer;transition:background .25s,transform .25s cubic-bezier(.3,1.5,.5,1)}
+.dotbtn:not(:disabled){background:var(--red)}
+.dotbtn:disabled{opacity:.4;cursor:not-allowed}
+.dotbtn:hover:not(:disabled){transform:scale(1.07)}
+.dotbtn[aria-pressed="true"]{transform:scale(.82)}
+.dotbtn:focus-visible{outline-color:var(--ink);border-radius:50%}
+.mob .dotrow{position:sticky;bottom:0;background:var(--paper);padding:10px 0 calc(10px + env(safe-area-inset-bottom));z-index:3}
+.actions{margin-top:22px}
+.actions.enter{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+.btnrow{display:flex;gap:10px 20px;align-items:center;flex-wrap:wrap}
+.btnrow.end{justify-content:flex-end}
+.primary{font:500 15px var(--sans);background:var(--ink);color:var(--paper);border:0;border-radius:999px;padding:14px 22px;cursor:pointer;display:inline-flex;align-items:center;gap:10px;text-decoration:none;transition:transform .2s}
+.primary:hover{transform:translateY(-1px)}
+.primary:disabled{opacity:.6;cursor:progress}
+.mini-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex:none}
+.textbtn{font:500 15px var(--sans);background:none;border:0;color:var(--ink);text-decoration:underline;text-decoration-color:var(--rule);text-decoration-thickness:1.5px;text-underline-offset:5px;padding:12px 4px;cursor:pointer}
+.textbtn:hover{text-decoration-color:var(--red)}
+.public-note{font:400 13px/1.5 var(--sans);color:var(--muted);margin:12px 0 0}
+
+/* pages */
+.page{position:relative;z-index:1;padding:clamp(28px,5vw,72px) var(--gutter) 96px;max-width:1480px;margin:0 auto}
+.wall-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px 40px;padding-bottom:30px;margin-bottom:clamp(44px,6vw,92px);border-bottom:1px solid var(--rule)}
+.wall-head h1,.about h1{font:var(--display-w) clamp(48px,7.4vw,112px)/.92 var(--serif);letter-spacing:-.035em;margin:0;outline:none}
+.wall-head .sub{font:italic 400 clamp(18px,1.6vw,23px)/1.35 var(--serif);color:var(--ink-2);margin:16px 0 0}
+.notes{columns:3 290px;column-gap:clamp(36px,4.5vw,80px)}
+.note{break-inside:avoid;margin:0 0 clamp(44px,4.4vw,68px);outline:none}
+.note .no{font:500 11px var(--sans);letter-spacing:.14em;color:var(--muted);font-variant-numeric:tabular-nums;margin:0 0 10px;display:block}
+.note .txt{font-family:var(--serif);margin:0;letter-spacing:-.012em;color:var(--ink);text-wrap:pretty;overflow-wrap:break-word}
+.note.L .txt,.note.you .txt{font-weight:var(--display-w)}
+.note.L .txt{font-size:clamp(27px,2.5vw,36px);line-height:1.12}
+.note.M .txt{font-size:clamp(21px,1.75vw,25px);line-height:1.28}
+.note.S .txt{font-size:18.5px;line-height:1.48}
+.enddot{display:inline-block;width:.2em;height:.2em;border-radius:50%;background:var(--red);margin-left:.05em;vertical-align:baseline}
+.note .meta{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;font:500 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.note .meta button{font:inherit;letter-spacing:inherit;text-transform:inherit;background:none;border:0;color:var(--muted);cursor:pointer;padding:10px 0;margin:-10px 0}
+.note .meta button:hover{color:var(--ink)}
+.note .meta [data-report]{opacity:0;transition:opacity .2s}
+.note:hover [data-report],.note:focus-within [data-report],.note.open [data-report],.note .meta [data-report]:focus-visible{opacity:1}
+.note.you{column-span:all;display:grid;grid-template-columns:clamp(120px,13vw,170px) 1fr;gap:clamp(12px,3vw,40px);align-items:end;margin-bottom:clamp(56px,7vw,104px)}
+.note.you .txt{font-size:clamp(30px,3.6vw,52px);line-height:1.1;max-width:24ch}
+.you-fig{position:relative;height:clamp(150px,15vw,190px)}
+.you-fig .label{position:absolute;left:4px;top:0;font-size:30px}
+.you-fig .ink .arrow{stroke-width:1.6}
+@media (max-width:700px){.note.you{grid-template-columns:1fr;gap:4px}.you-fig{height:130px;width:100%}.you-fig .label{left:120px;top:34px}.you-fig .cin{transform:none}}
+.held{font:400 13px var(--sans);color:var(--muted);margin:10px 0 0;letter-spacing:0;text-transform:none}
+.more{display:flex;justify-content:center;margin-top:8px}
+.about{max-width:760px}
+.about .lede{font:400 clamp(24px,2.4vw,32px)/1.25 var(--serif);letter-spacing:-.012em;margin:40px 0 28px}
+.about p{font:400 19px/1.6 var(--serif);color:var(--ink-2);margin:0 0 18px;max-width:58ch}
+.about h2{font:400 32px/1 var(--hand);margin:48px 0 14px}
+.about a:not(.primary){color:var(--ink);text-decoration-color:var(--red);text-underline-offset:4px}
+.foot{position:relative;z-index:1;text-align:center;padding:24px 0 40px}
+.foot a{font:400 13px var(--sans);color:var(--muted)}
+
+/* dialog */
+dialog{border:1.5px solid var(--ink);border-radius:26px;background:var(--paper);color:var(--ink);padding:clamp(24px,4vw,40px);width:min(580px,calc(100vw - 24px));max-height:calc(100svh - 24px)}
+dialog::backdrop{background:rgba(27,26,23,.38);backdrop-filter:blur(2px)}
+dialog[open]{animation:rise .35s cubic-bezier(.2,.7,.2,1)}
+dialog h2{font:400 34px/1 var(--hand);margin:0 0 18px}
+.preview{margin:0 0 24px;padding:22px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.preview .note{margin:0}
+dialog label{font:500 13px var(--sans);display:block;margin-bottom:4px}
+dialog label .opt{color:var(--muted);font-weight:400}
+#pubName{width:100%;font:400 21px var(--serif);background:transparent;border:0;border-bottom:1px solid var(--ink);padding:8px 0;color:var(--ink);outline:none;border-radius:0}
+#pubName:focus{border-bottom-color:var(--red);box-shadow:0 1px 0 var(--red)}
+#pubName::placeholder{color:var(--muted);font-style:italic}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+dialog .btnrow{margin-top:26px}
+.care p{font:400 19px/1.5 var(--serif);margin:0 0 14px}
+.care a{color:var(--ink);text-decoration-color:var(--red)}
+
+/* prototype menu */
+.proto{position:fixed;left:12px;bottom:12px;z-index:45;font:12px var(--sans)}
+.proto summary{list-style:none;cursor:pointer;border:1px dashed var(--muted);border-radius:999px;padding:6px 12px;color:var(--muted);background:var(--paper)}
+.proto summary::-webkit-details-marker{display:none}
+.proto-menu{position:absolute;bottom:36px;left:0;background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:6px;display:grid;min-width:220px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+.proto-menu button{background:none;border:0;text-align:left;padding:9px 10px;border-radius:8px;cursor:pointer;font:12px var(--sans)}
+.proto-menu button:hover{background:rgba(0,0,0,.05)}
+
+@keyframes pop{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+html.rm *,html.rm *::before,html.rm *::after{animation:none!important;transition:none!important}
+</style>
+</head>
+<body>
+<a class="skiplink" href="#main">Skip to content</a>
+<button class="skip" id="skip" hidden>Skip</button>
+
+<header class="nav">
+  <a class="logo" href="#/" aria-label="Dot the Door, home"><span class="logo-dot" aria-hidden="true"></span>the Door</a>
+  <nav aria-label="Main">
+    <a class="navlink" href="#/wall" data-nav="wall">The Dot Wall</a><a class="navlink" href="#/about" data-nav="about">About</a>
+  </nav>
+</header>
+
+<main id="main">
+  <section id="stage" class="stage pending" aria-labelledby="homeTitle">
+    <h1 id="homeTitle" class="sr-only">Dot the Door</h1>
+    <p class="sr-only home-only">This is you. This is your sentence. And this is Dot, the door.</p>
+
+    <div id="world" class="world" aria-hidden="true">
+      <svg id="ink" class="ink"><g class="lines" id="gLines"></g><g id="gPaths" class="home-only"></g>
+        <path class="arrow home-only" id="arrYou" pathLength="1"/><path class="arrow home-only" id="arrDot" pathLength="1"/><path class="arrow home-only" id="arrDoor" pathLength="1"/></svg>
+      <div class="ln home-only" id="ln0"><span class="t">This is your</span><i class="probe"></i></div>
+      <div class="ln home-only" id="ln1"><span class="t">sentence</span><span class="dotslot"></span><i class="probe"></i></div>
+      <span class="bigdot" id="bigdot"></span>
+      <div class="label home-only" id="lblYou">This is you</div>
+      <div class="label home-only" id="lblDot">And this is Dot</div>
+      <div class="label home-only" id="lblDoor">the door</div>
+      <div class="phrase" id="phrase" hidden><span class="ghost"></span><span class="inked"></span><i class="probe"></i></div>
+      <svg id="cin" class="cin"></svg>
+    </div>
+
+    <aside class="bubble home-only" id="bubble">
+      <p data-dots>Life doesn’t rewind. But the next sentence is yours.</p>
+      <svg class="tail" id="tail" viewBox="0 0 24 22"><path d="M3 0 C6 9 5 15 0 21 C10 18 17 10 21 0"/><path class="cover" d="M4.5 0 L19.5 0"/></svg>
+    </aside>
+
+    <section class="doors home-only" id="doors" aria-labelledby="doorsQ">
+      <h2 class="q" id="doorsQ">Which door feels like yours today?</h2>
+      <ul>
+        <li><button class="door" data-door="start"><span class="t" data-dots>I’m ready to start something.</span></button></li>
+        <li><button class="door" data-door="decide"><span class="t" data-dots>I have a decision to make.</span></button></li>
+        <li><button class="door" data-door="letgo"><span class="t" data-dots>I’m ready to let something go.</span></button></li>
+        <li><button class="door" data-door="unknown"><span class="t" data-dots>I don’t know what comes next.</span></button></li>
+      </ul>
+    </section>
+    <button class="replay home-only" id="replay" hidden>Replay the beginning</button>
+
+    <div class="mini write-only" id="mini">
+      <p class="mini-q" id="miniQ">Pick a door, if one fits</p>
+      <ul aria-labelledby="miniQ">
+        <li><button class="mini-door" data-door="start" data-dots>I’m ready to start something.</button></li>
+        <li><button class="mini-door" data-door="decide" data-dots>I have a decision to make.</button></li>
+        <li><button class="mini-door" data-door="letgo" data-dots>I’m ready to let something go.</button></li>
+        <li><button class="mini-door" data-door="unknown" data-dots>I don’t know what comes next.</button></li>
+      </ul>
+    </div>
+
+    <form class="panel write-only" id="panel" novalidate>
+      <p class="prompt" id="prompt" tabindex="-1"></p>
+      <div class="editor" id="editor">
+        <div class="mirror" id="mirror" aria-hidden="true"></div>
+        <textarea id="ta" rows="3" maxlength="400" placeholder="Start here" aria-labelledby="prompt" aria-describedby="hint" spellcheck="true"></textarea>
+      </div>
+      <div class="dotrow">
+        <p class="hint" id="hint" data-dots>When you’re ready, place your dot.</p>
+        <span class="count" id="count"></span>
+        <button type="button" class="dotbtn" id="dotbtn" aria-label="Place your dot" aria-pressed="false" disabled></button>
+      </div>
+      <div class="actions" id="actions" hidden>
+        <div class="btnrow">
+          <button type="button" class="primary" id="addBtn"><span class="mini-dot" aria-hidden="true"></span>Add to the Dot Wall</button>
+          <button type="button" class="textbtn" id="copyBtn">Copy</button>
+        </div>
+        <p class="public-note" data-dots>Your words will be public. You can leave your name out.</p>
+      </div>
+    </form>
+  </section>
+
+  <section id="wall" class="page" hidden aria-labelledby="wallTitle">
+    <header class="wall-head">
+      <div>
+        <h1 id="wallTitle" tabindex="-1">The Dot Wall</h1>
+        <p class="sub" data-dots>Every red dot here was left by someone.</p>
+      </div>
+      <a class="primary" href="#/write"><span class="mini-dot" aria-hidden="true"></span>Write your next sentence</a>
+    </header>
+    <div class="notes" id="notes"></div>
+    <div class="more"><button class="textbtn" id="moreBtn">Show more</button></div>
+  </section>
+
+  <section id="about" class="page about" hidden aria-labelledby="aboutTitle">
+    <h1 id="aboutTitle" tabindex="-1">About</h1>
+    <div data-dots>
+      <p class="lede">Every sentence ends with a dot. We like to think of it as a door.</p>
+      <p>Dot the Door is a small place to write the sentence that comes next: something you’re starting, deciding, letting go of, or don’t have a name for yet. Keep it, copy it, or leave it on the Dot Wall for others to read.</p>
+      <p>There are no accounts, likes or followers here. Just sentences, and the red dots people leave behind.</p>
+      <h2>How the Dot Wall works</h2>
+      <p>Every sentence is read by a filter before it goes up, and sometimes by a person. Links, contact details and anything that could hurt someone are held back.</p>
+      <p>See something that shouldn’t be here? Tap the sentence and choose Report. Changed your mind about your own? You can take your dot down from the device you posted it from, or write to <a href="mailto:info@dotthedoor.com">info@dotthedoor.com</a>.</p>
+    </div>
+    <p style="margin-top:40px"><a class="primary" href="#/write"><span class="mini-dot" aria-hidden="true"></span>Write your next sentence</a></p>
+  </section>
+</main>
+<footer class="foot" id="foot" hidden><a href="mailto:info@dotthedoor.com">info@dotthedoor.com</a></footer>
+
+<dialog id="pub" aria-labelledby="pubTitle">
+  <form id="pubForm" method="dialog">
+    <h2 id="pubTitle">This is how it will look</h2>
+    <div class="preview" id="pubPreview"></div>
+    <label for="pubName">Name <span class="opt">(optional)</span></label>
+    <input id="pubName" maxlength="40" autocomplete="off" placeholder="Leave it blank to stay anonymous">
+    <input class="hp" id="pubHp" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <p class="public-note" data-dots>Your words will be public. You can leave your name out.</p>
+    <div class="btnrow end">
+      <button type="button" class="textbtn" id="pubCancel">Not yet</button>
+      <button type="submit" class="primary" id="pubGo"><span class="mini-dot" aria-hidden="true"></span>Put it on the wall</button>
+    </div>
+  </form>
+  <div class="care" id="pubCare" hidden>
+    <h2>Thank you for writing this</h2>
+    <div data-dots>
+      <p>We won’t put this one on the wall. But you don’t have to carry it alone.</p>
+      <p><a href="https://findahelpline.com" target="_blank" rel="noopener">findahelpline.com</a> lists free, confidential support near you, any time.</p>
+      <p>Your words are still here, only yours.</p>
+    </div>
+    <div class="btnrow end"><button type="button" class="primary" id="careOk">Back to my sentence</button></div>
+  </div>
+</dialog>
+
+<div id="live" class="sr-only" aria-live="polite"></div>
+
+<details class="proto">
+  <summary>Prototype</summary>
+  <div class="proto-menu">
+    <button data-p="replay">Replay opening</button>
+    <button data-p="rm">Reduced motion: <b id="rmState">system</b></button>
+    <button data-p="font">Typeface: <b id="fontState">Plus Jakarta Sans (logo)</b></button>
+    <button data-p="reset">Reset (first visit, clear my dots)</button>
+  </div>
+</details>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const TAU = Math.PI * 2, D2R = Math.PI / 180;
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+
+const DOORS = {
+  start:   { label: 'I’m ready to start something.', prompt: 'What have you been waiting to begin? Give it a first sentence.' },
+  decide:  { label: 'I have a decision to make.', prompt: 'What are you deciding? Put it into words.' },
+  letgo:   { label: 'I’m ready to let something go.', prompt: 'Some sentences deserve an ending. What are you ready to leave behind?' },
+  unknown: { label: 'I don’t know what comes next.', prompt: 'You don’t need the whole story. Start with what you know right now.' },
+};
+const GENERIC_PROMPT = 'Write the sentence that comes next.';
+
+/* ---------- reduced motion ---------- */
+const mq = matchMedia('(prefers-reduced-motion: reduce)');
+const reduced = () => { const o = LS.get('dtd.rm', null); return o === null ? mq.matches : o; };
+const applyRM = () => {
+  document.documentElement.classList.toggle('rm', reduced());
+  const o = LS.get('dtd.rm', null);
+  $('#rmState').textContent = o === null ? `system (${mq.matches ? 'on' : 'off'})` : (o ? 'on' : 'off');
+};
+
+/* ---------- text helpers ---------- */
+const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const dotsHTML = s => esc(s).replace(/\./g, '<span class="p">.</span>');
+function dotify(root) {
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: n => (n.nodeValue.includes('.') && !n.parentElement.closest('.p,textarea,input,script,style')) ? 1 : 2,
+  });
+  const nodes = []; while (w.nextNode()) nodes.push(w.currentNode);
+  nodes.forEach(n => { const span = document.createElement('span'); span.innerHTML = dotsHTML(n.nodeValue); n.replaceWith(...span.childNodes); });
+}
+function endedHTML(text) { // every note ends with the Dot (visual only)
+  const t = text.replace(/\s+$/, '');
+  return t.endsWith('.') ? dotsHTML(t.slice(0, -1)) + '<span class="enddot" aria-hidden="true"></span><span class="sr-only">.</span>'
+                         : dotsHTML(t) + '<span class="enddot" aria-hidden="true"></span>';
+}
+const live = msg => { const l = $('#live'); l.textContent = ''; setTimeout(() => l.textContent = msg, 30); };
+
+/* ---------- ticker / tween ---------- */
+const tasks = new Set(); let ticking = false;
+function addTask(fn) { tasks.add(fn); if (!ticking) { ticking = true; requestAnimationFrame(tick); } }
+function tick(t) { for (const fn of [...tasks]) if (fn(t) === false) tasks.delete(fn); if (tasks.size) requestAnimationFrame(tick); else ticking = false; }
+class Token { constructor() { this.cancelled = false; } cancel() { this.cancelled = true; } }
+const ease = {
+  linear: p => p,
+  out: p => 1 - Math.pow(1 - p, 3),
+  inOut: p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2,
+  run: p => .55 * p + .45 * (p * p * (3 - 2 * p)),
+};
+function tween(dur, update, tok, e = ease.inOut) {
+  return new Promise(res => {
+    if (tok && tok.cancelled) return res(false);
+    if (dur <= 0) { update(1); return res(true); }
+    let t0 = null;
+    addTask(t => {
+      if (tok && tok.cancelled) { res(false); return false; }
+      if (t0 === null) t0 = t;
+      const p = Math.min(1, (t - t0) / dur);
+      update(e(p));
+      if (p >= 1) { res(true); return false; }
+    });
+  });
+}
+const wait = (ms, tok) => tween(ms, () => {}, tok, ease.linear);
+let curTok = null;
+const newTok = () => { if (curTok) curTok.cancel(); curTok = new Token(); return curTok; };
+
+/* ---------- Cin Ali ---------- */
+const vec = (a, L) => [Math.sin(a * D2R) * L, Math.cos(a * D2R) * L];
+const hash = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+class Figure {
+  constructor(svg) {
+    this.svg = svg;
+    svg.setAttribute('viewBox', '-60 -118 120 126');
+    svg.innerHTML = `<g class="g" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.7">
+      <g opacity=".48"><path class="aB"/><path class="lB"/></g>
+      <path class="body"/><circle class="head" r="11.2"/><circle class="eye" r="1.9" fill="currentColor" stroke="none"/>
+      <path class="lA"/><path class="aA"/></g>`;
+    this.g = $('.g', svg); this.parts = {}; ['aB', 'lB', 'body', 'head', 'eye', 'lA', 'aA'].forEach(k => this.parts[k] = $('.' + k, svg));
+    Object.assign(this, { x: 0, y: 0, size: 90, facing: 1, pose: 'stand', phase: 0, tap: 0, seed: 0, air: 0, boil: false, _key: '' });
+    this.idleId = 0;
+  }
+  set(o) { Object.assign(this, o); this.draw(true); return this; }
+  angles() {
+    switch (this.pose) {
+      case 'run': {
+        const f = Math.floor((((this.phase % TAU) + TAU) % TAU) / TAU * 8) / 8 * TAU;
+        const leg = q => { const th = 36 * Math.sin(q); const bend = 12 + 64 * Math.max(0, Math.cos(q)); return [th, th - bend, Math.cos(q) > 0 ? -8 : 0]; };
+        const arm = q => { const u = -34 * Math.sin(q); return [u, u + 88]; };
+        return { lean: 12, head: 4, lA: leg(f), lB: leg(f + Math.PI), aA: arm(f), aB: arm(f + Math.PI) };
+      }
+      case 'think': return { lean: -3, head: 13, lA: [9, 7, this.tap ? 26 : 0], lB: [-6, -6, 0], aA: [58, 176], aB: [-3, 92] };
+      case 'jump': return { lean: 6, head: -8, lA: [62, -8, -15], lB: [24, -58, -20], aA: [150, 165], aB: [125, 150] };
+      case 'point': return { lean: 0, head: 6, lA: [8, 6, 0], lB: [-8, -8, 0], aA: [90, 93], aB: [-15, -10] };
+      default: return { lean: 0, head: 0, lA: [8, 6, 0], lB: [-8, -8, 0], aA: [17, 24], aB: [-17, -12] };
+    }
+  }
+  draw(force) {
+    const key = [this.pose, this.pose === 'run' ? Math.floor(this.phase / TAU * 8) : 0, this.tap, this.boil ? this.seed : 0, this.facing].join('|');
+    const s = this.size;
+    this.svg.style.width = s * 1.2 + 'px'; this.svg.style.height = s * 1.26 + 'px';
+    this.svg.style.left = (this.x - s * .6) + 'px'; this.svg.style.top = (this.y - this.air - s * 1.18) + 'px';
+    if (!force && key === this._key) return; this._key = key;
+    const a = this.angles();
+    const J = (p, i) => { if (!this.boil) return p; const k = this.seed * 13 + i * 7; return [p[0] + (hash(k) - .5) * 1.4, p[1] + (hash(k + 3) - .5) * 1.4]; };
+    const add = (p, v) => [p[0] + v[0], p[1] + v[1]];
+    const hip = [0, -46];
+    const up = (ang, L) => [Math.sin(ang * D2R) * L, -Math.cos(ang * D2R) * L];
+    const neck = add(hip, up(a.lean, 30)), sh = add(hip, up(a.lean, 26));
+    const headC = add(neck, up(a.lean + a.head, 12.5));
+    const limb = (root, u, f, l1, l2) => { const m = add(root, vec(u, l1)); return [m, add(m, vec(f, l2))]; };
+    const [kA, anA] = limb(hip, a.lA[0], a.lA[1], 23, 23), [kB, anB] = limb(hip, a.lB[0], a.lB[1], 23, 23);
+    const toe = (an, fa) => [an[0] + Math.cos(fa * D2R) * 6, an[1] - Math.sin(fa * D2R) * 6];
+    const tA = toe(anA, a.lA[2]), tB = toe(anB, a.lB[2]);
+    const [eA, hA] = limb(sh, a.aA[0], a.aA[1], 16, 15), [eB, hB] = limb(sh, a.aB[0], a.aB[1], 16, 15);
+    const maxY = Math.max(anA[1], tA[1], anB[1], tB[1]);
+    const dy = -maxY;
+    const P = (p, i) => { const q = J([p[0], p[1] + dy], i); return q[0].toFixed(2) + ' ' + q[1].toFixed(2); };
+    const thru = (r, m, e, i) => { // smooth curve passing through the middle joint
+      const c = [2 * m[0] - (r[0] + e[0]) / 2, 2 * m[1] - (r[1] + e[1]) / 2];
+      return `M${P(r, i)} Q${P(c, i + 1)} ${P(e, i + 2)}`;
+    };
+    const mid = [(hip[0] + neck[0]) / 2 + 1.2, (hip[1] + neck[1]) / 2];
+    this.parts.body.setAttribute('d', `M${P(hip, 1)} Q${P(mid, 2)} ${P(neck, 3)}`);
+    const hc = J([headC[0], headC[1] + dy], 4);
+    this.parts.head.setAttribute('cx', hc[0]); this.parts.head.setAttribute('cy', hc[1]);
+    this.parts.eye.setAttribute('cx', hc[0] + 4.6); this.parts.eye.setAttribute('cy', hc[1] - 1.2 + (a.head > 8 ? 1.4 : 0));
+    this.parts.lA.setAttribute('d', thru(hip, kA, anA, 10) + ` L${P(tA, 13)}`);
+    this.parts.lB.setAttribute('d', thru(hip, kB, anB, 20) + ` L${P(tB, 23)}`);
+    this.parts.aA.setAttribute('d', thru(sh, eA, hA, 30));
+    this.parts.aB.setAttribute('d', thru(sh, eB, hB, 40));
+    this.g.setAttribute('transform', this.facing < 0 ? 'scale(-1 1)' : '');
+  }
+  stopIdle() { this.idleId++; this.boil = false; this.tap = 0; }
+  idle(pose, { taps = false, ms = 9000 } = {}) {
+    this.stopIdle(); this.pose = pose; this.draw(true);
+    if (reduced()) return;
+    const id = this.idleId; const start = performance.now(); this.boil = true;
+    addTask(t => {
+      if (id !== this.idleId) return false;
+      const e = t - start;
+      if (e > ms) { this.boil = false; this.tap = 0; this.draw(true); return false; }
+      this.seed = Math.floor(e / 130);
+      if (taps) { const c = e % 3400; const i = Math.floor(c / 150); this.tap = (i < 6 && i % 2 === 1) ? 1 : 0; }
+      this.draw();
+    });
+  }
+  runTo(x2, { tok, onStep, speed } = {}) {
+    this.stopIdle();
+    const x1 = this.x, d = Math.abs(x2 - x1); if (d < 1) return Promise.resolve(true);
+    this.facing = x2 >= x1 ? 1 : -1; this.pose = 'run';
+    const sp = speed || this.size * 2.7, stride = this.size * 1.2; let last = x1;
+    return tween(d / sp * 1000, p => {
+      this.x = x1 + (x2 - x1) * p; this.phase += Math.abs(this.x - last) / stride * TAU; last = this.x;
+      this.draw(); onStep && onStep(this.x);
+    }, tok, ease.run).then(ok => { if (ok) { this.x = x2; this.pose = 'stand'; this.draw(true); } return ok; });
+  }
+  hopTo(x2, y2, { tok, dur = 520, height } = {}) {
+    this.stopIdle();
+    const x1 = this.x, y1 = this.y, h = height ?? this.size * .45;
+    this.facing = x2 >= x1 ? 1 : -1; this.pose = 'jump';
+    return tween(dur, p => { this.x = x1 + (x2 - x1) * p; this.y = y1 + (y2 - y1) * p; this.air = 4 * h * p * (1 - p); this.draw(true); }, tok, ease.linear)
+      .then(ok => { this.air = 0; this.pose = 'stand'; this.facing = 1; this.draw(true); return ok; });
+  }
+}
+
+/* ---------- elements ---------- */
+const stage = $('#stage'), world = $('#world'), gLines = $('#gLines'), gPaths = $('#gPaths');
+const ln0 = $('#ln0'), ln1 = $('#ln1'), bigdot = $('#bigdot');
+const lblYou = $('#lblYou'), lblDot = $('#lblDot'), lblDoor = $('#lblDoor');
+const arr = { you: $('#arrYou'), dot: $('#arrDot'), door: $('#arrDoor') };
+const doorsEl = $('#doors'), bubble = $('#bubble'), tail = $('#tail'), replayBtn = $('#replay'), skipBtn = $('#skip');
+const phraseEl = $('#phrase'), ghost = $('.ghost', phraseEl), inked = $('.inked', phraseEl);
+const mini = $('#mini'), panel = $('#panel'), promptEl = $('#prompt'), ta = $('#ta'), mirror = $('#mirror');
+const dotbtn = $('#dotbtn'), actions = $('#actions'), countEl = $('#count'), hintEl = $('#hint');
+const fig = new Figure($('#cin'));
+const navH = () => $('.nav').offsetHeight;
+
+const L = {}; // current layout
+let inkLines = []; let scene = 'none'; let bubbleTimer = 0; let writeKey = null; let WL = null;
+
+function setLine(el, x, base, fs) {
+  el.style.fontSize = fs + 'px'; el.style.left = x + 'px'; el.style.top = '0px';
+  const b = $('.probe', el).offsetTop; el.style.top = (base - b) + 'px';
+  return el.offsetWidth;
+}
+function wobble(x1, x2, y) {
+  if (x2 - x1 < 1) return '';
+  let d = `M${x1.toFixed(1)} ${(y + Math.sin(x1 * .045 + y) * .7).toFixed(2)}`;
+  for (let x = x1 + 16; x < x2; x += 16) d += ` L${x.toFixed(1)} ${(y + Math.sin(x * .045 + y) * .7 + Math.sin(x * .13) * .35).toFixed(2)}`;
+  return d + ` L${x2.toFixed(1)} ${(y + Math.sin(x2 * .045 + y) * .7).toFixed(2)}`;
+}
+function drawInk() {
+  gLines.style.strokeWidth = clamp(L.fs * .042, 2, 3.6);
+  gLines.innerHTML = inkLines.map(l => `<path d="${l.d || wobble(l.x1, l.x2, l.y)}"/>`).join('');
+}
+function arrowD(x1, y1, x2, y2, bend = .25) {
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, dx = x2 - x1, dy = y2 - y1;
+  const cx = mx - dy * bend, cy = my + dx * bend;
+  let tx = x2 - cx, ty = y2 - cy; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+  const h = 9, a = .5, rot = (x, y, g) => [x * Math.cos(g) - y * Math.sin(g), x * Math.sin(g) + y * Math.cos(g)];
+  const [ax, ay] = rot(-tx, -ty, a), [bx, by] = rot(-tx, -ty, -a);
+  const f = n => n.toFixed(1);
+  return `M${f(x1)} ${f(y1)} Q${f(cx)} ${f(cy)} ${f(x2)} ${f(y2)} M${f(x2 + ax * h)} ${f(y2 + ay * h)} L${f(x2)} ${f(y2)} L${f(x2 + bx * h)} ${f(y2 + by * h)}`;
+}
+const setCam = (x, y) => world.style.transform = `translate3d(${x}px,${y}px,0)`;
+function placeDot(d) { bigdot.style.left = (d.x - d.r) + 'px'; bigdot.style.top = (d.y - d.r) + 'px'; bigdot.style.width = bigdot.style.height = d.r * 2 + 'px'; }
+
+/* ---------- home layout ---------- */
+function layoutHome() { // measures the home scene even while the write scene is showing
+  const wasWrite = stage.classList.contains('is-write'); stage.classList.remove('is-write');
+  try { layoutHomeInner(); } finally { stage.classList.toggle('is-write', wasWrite); }
+}
+function layoutHomeInner() {
+  const W = stage.clientWidth, vh = window.innerHeight, nh = navH();
+  const mob = W < 900; L.mob = mob; L.W = W;
+  document.documentElement.classList.toggle('mob', mob);
+  ln0.style.fontSize = ln1.style.fontSize = '100px';
+  const w0 = ln0.offsetWidth / 100, w1 = ln1.offsetWidth / 100;
+  let fs, m, rows;
+  if (!mob) {
+    m = clamp(Math.round(W * .065), 28, 112);
+    const doorsW = clamp(W * .29, 300, 430);
+    fs = clamp((W - 2 * m - doorsW - 40) / (w0 + .27 + w1 + 2.5), 40, 92);
+    L.H = Math.max(600, vh - nh);
+    const base = Math.round(L.H * .52);
+    const a = setLine(ln0, m, base, fs);
+    const bx = m + a + fs * .27, b = setLine(ln1, bx, base, fs);
+    rows = [{ els: [ln0, ln1], x: m, right: bx + b, base }];
+  } else {
+    m = 20;
+    fs = clamp(Math.min((W - 2 * m) / (w0 + .04), (W - 2 * m) / (w1 + 1.7)), 30, 60);
+    const base0 = Math.round(fs * 1.35 + 78), base1 = Math.round(base0 + fs * 2.3);
+    const a = setLine(ln0, m, base0, fs), b = setLine(ln1, m, base1, fs);
+    rows = [{ els: [ln0], x: m, right: m + a, base: base0 }, { els: [ln1], x: m, right: m + b, base: base1 }];
+  }
+  Object.assign(L, { fs, m, rows, cin: fs * (mob ? 1.42 : 1.62), gOff: fs * .17 });
+  rows.forEach(r => r.ground = r.base + L.gOff);
+  const last = rows[rows.length - 1], r = fs * .1;
+  L.dot = { x: parseFloat(ln1.style.left) + $('.dotslot', ln1).offsetLeft + fs * .03 + r, y: last.base - r, r };
+  L.last = last; placeDot(L.dot);
+  L.cinStart = rows[0].x + L.cin * .3;
+  L.cinEnd = L.dot.x + L.cin * .72;
+
+  // hand-written labels
+  const hs = clamp(fs * .5, 24, 38); L.hs = hs;
+  [lblYou, lblDot, lblDoor].forEach(e => e.style.fontSize = hs + 'px');
+  const g0 = rows[0].ground;
+  const ly = { x: L.cinStart + L.cin * .45, y: g0 - L.cin * 1.22 - hs * .5 };
+  lblYou.style.left = ly.x + 'px'; lblYou.style.top = ly.y + 'px';
+  arr.you.setAttribute('d', arrowD(ly.x - 6, ly.y + hs * .6, L.cinStart + L.cin * .16, g0 - L.cin * 1.02, -.35));
+  const dw = lblDot.offsetWidth;
+  const dTop = last.base - fs * .74 - hs - (mob ? 14 : 34);
+  lblDot.style.left = (L.dot.x + hs * .3 - dw) + 'px'; lblDot.style.top = dTop + 'px';
+  arr.dot.setAttribute('d', arrowD(L.dot.x + hs * .12, dTop + hs * 1.02, L.dot.x + r * .2, L.dot.y - r - 5, .18));
+  const doorTop = last.ground + (mob ? 16 : 28);
+  lblDoor.style.left = (L.dot.x - hs * .2) + 'px'; lblDoor.style.top = doorTop + 'px';
+  arr.door.setAttribute('d', arrowD(L.dot.x + hs * .18, doorTop + 1, L.dot.x + r * .1, L.dot.y + r + 5, -.18));
+
+  // doors + bubble
+  if (!mob) {
+    const left = L.cinEnd + L.cin * .8;
+    doorsEl.style.left = left + 'px'; doorsEl.style.width = (W - m - left) + 'px';
+    const bBottom = last.ground - L.cin * 1.08 - 12, bl = L.cinEnd - L.cin * .12;
+    bubble.style.left = bl + 'px'; bubble.style.width = Math.min(340, W - m - bl) + 'px';
+    bubble.style.top = (bBottom - bubble.offsetHeight) + 'px';
+    Object.assign(tail.style, { left: '14px', top: '100%', bottom: '', transform: 'translateY(-1.5px)' });
+    doorsEl.style.top = Math.max(last.base - doorsEl.offsetHeight * .38, bBottom + 24) + 'px';
+    stage.style.height = L.H + 'px';
+    replayBtn.style.left = (W - m - 160) + 'px'; replayBtn.style.top = (L.H - 56) + 'px';
+  } else {
+    const bt = doorTop + hs + 28;
+    bubble.style.left = m + 'px'; bubble.style.width = (W - 2 * m) + 'px'; bubble.style.top = bt + 'px';
+    Object.assign(tail.style, { left: clamp(L.cinEnd - m - 10, 20, W - 2 * m - 40) + 'px', top: '', bottom: '100%', transform: 'translateY(1.5px) scaleY(-1)' });
+    const dt = bt + bubble.offsetHeight + 24;
+    doorsEl.style.left = m + 'px'; doorsEl.style.width = (W - 2 * m) + 'px'; doorsEl.style.top = dt + 'px';
+    replayBtn.style.left = m + 'px'; replayBtn.style.top = (dt + doorsEl.offsetHeight + 12) + 'px';
+    L.H = Math.max(vh - nh, dt + doorsEl.offsetHeight + 72);
+    stage.style.height = L.H + 'px';
+  }
+  gPaths.innerHTML = '';
+}
+function pathsShown(on) { $$('.dpath', gPaths).forEach(p => { p.classList.toggle('shown', on); p.style.strokeDashoffset = ''; }); gPaths.getAnimations().forEach(a => a.cancel()); }
+function revealRows(rowIdx, cut) {
+  L.rows.forEach((r, i) => r.els.forEach(el => {
+    if (i < rowIdx) el.style.clipPath = 'none';
+    else if (i > rowIdx) el.style.clipPath = 'inset(-40% 100% -40% 0)';
+    else { const right = parseFloat(el.style.left) + el.offsetWidth; el.style.clipPath = `inset(-40% ${Math.max(0, right - cut)}px -40% -12px)`; }
+  }));
+}
+function showLabel(el, a, on) { el.classList.toggle('on', on); el.style.clipPath = ''; a.classList.toggle('on', on); a.style.transition = 'none'; a.style.strokeDashoffset = ''; }
+async function writeLabel(el, a, dur, tok) {
+  await tween(dur, p => el.style.clipPath = `inset(-30% ${(1 - p) * 100}% -30% -10%)`, tok, ease.out);
+  await tween(dur * .6, p => a.style.strokeDashoffset = 1 - p, tok, ease.out);
+  if (!tok.cancelled) { el.classList.add('on'); a.classList.add('on'); }
+}
+function doorsOn(animate) {
+  doorsEl.classList.add('on'); doorsEl.style.opacity = '';
+  $$('.door, .q', doorsEl).forEach(b => { b.style.opacity = ''; b.style.visibility = ''; });
+  $$('.door .t', doorsEl).forEach(t => t.style.visibility = '');
+  if (animate && !reduced()) [$('.q', doorsEl), ...$$('.door', doorsEl)].forEach((b, i) =>
+    b.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 480, delay: 110 * i, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' }));
+}
+function scheduleBubble() { clearTimeout(bubbleTimer); bubbleTimer = setTimeout(() => bubble.classList.add('on'), 1500); }
+
+/* ---------- home states ---------- */
+function homeFinal() {
+  scene = 'home'; stage.classList.remove('is-write'); setCam(0, 0);
+  phraseEl.hidden = true; skipBtn.hidden = true; replayBtn.hidden = false;
+  revealRows(99, 0);
+  inkLines = L.rows.map((r, i) => ({ x1: r.x - 4, x2: i === L.rows.length - 1 ? L.cinEnd + L.cin * .3 : r.right + L.cin * .35, y: r.ground }));
+  drawInk();
+  bigdot.getAnimations().forEach(a => a.cancel()); bigdot.style.transform = 'scale(1)';
+  showLabel(lblYou, arr.you, false); showLabel(lblDot, arr.dot, true); showLabel(lblDoor, arr.door, true);
+  pathsShown(true); fig.svg.style.opacity = '';
+  fig.set({ x: L.cinEnd, y: L.last.ground, size: L.cin, facing: 1, air: 0 }); fig.idle('think', { taps: true, ms: 10500 });
+  doorsOn(false); bubble.classList.remove('on'); scheduleBubble();
+  LS.set('dtd.seen', true);
+}
+async function playOpening() {
+  const tok = newTok(); scene = 'opening'; stage.classList.remove('is-write'); setCam(0, 0);
+  phraseEl.hidden = true; replayBtn.hidden = true; skipBtn.hidden = false;
+  revealRows(-1, 0); inkLines = []; drawInk();
+  bigdot.getAnimations().forEach(a => a.cancel()); bigdot.style.transform = 'scale(0)';
+  [[lblYou, arr.you], [lblDot, arr.dot], [lblDoor, arr.door]].forEach(([e, a]) => { showLabel(e, a, false); e.style.clipPath = 'inset(-30% 100% -30% -10%)'; a.style.transition = 'none'; a.style.strokeDashoffset = 1; });
+  doorsEl.classList.remove('on'); bubble.classList.remove('on'); clearTimeout(bubbleTimer); pathsShown(false);
+  fig.set({ x: L.cinStart, y: L.rows[0].ground, size: L.cin, facing: 1, pose: 'stand', air: 0 }); fig.idle('stand', { ms: 3400 });
+
+  await wait(450, tok);
+  await writeLabel(lblYou, arr.you, 650, tok);
+  await wait(1100, tok); if (tok.cancelled) return;
+  lblYou.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 350, fill: 'forwards' });
+  arr.you.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 350, fill: 'forwards' });
+
+  let popped = false;
+  const lastI = L.rows.length - 1;
+  for (let i = 0; i < L.rows.length; i++) {
+    const r = L.rows[i];
+    if (i > 0) {
+      await fig.hopTo(r.x + L.cin * .3, r.ground, { tok, dur: 720, height: (r.ground - L.rows[i - 1].ground) / 2 + L.cin * 1.25 }); // carriage return: a leap over the line just written
+      if (tok.cancelled) return;
+    }
+    const x1 = r.x - 4;
+    const target = i === lastI ? L.cinEnd : r.right + L.cin * .35;
+    await fig.runTo(target, {
+      tok, onStep: x => {
+        revealRows(i, x - L.cin * .22);
+        inkLines[i] = { x1, x2: x + L.cin * .3, y: r.ground }; drawInk();
+        if (i === lastI && !popped && x - L.cin * .25 > L.dot.x + L.dot.r) {
+          popped = true; bigdot.style.transform = 'scale(1)';
+          bigdot.animate([{ transform: 'scale(0)' }, { transform: 'scale(1.35)', offset: .6 }, { transform: 'scale(1)' }], { duration: 420, easing: 'ease-out' });
+        }
+      },
+    });
+    if (tok.cancelled) return;
+  }
+  revealRows(99, 0);
+  fig.idle('stand', { ms: 1500 });
+  await wait(220, tok);
+  await writeLabel(lblDot, arr.dot, 520, tok);
+  await writeLabel(lblDoor, arr.door, 420, tok);
+  await wait(650, tok); if (tok.cancelled) return; // let "Dot / the door" land before anything competes with it
+  bigdot.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.6)', offset: .45 }, { transform: 'scale(1)' }], { duration: 620, easing: 'cubic-bezier(.3,.7,.2,1)' });
+  await wait(300, tok); if (tok.cancelled) return;
+  doorsOn(true);
+  await wait(700, tok); if (tok.cancelled) return;
+  lblYou.getAnimations().forEach(a => a.cancel()); arr.you.getAnimations().forEach(a => a.cancel());
+  homeFinal();
+}
+function skipOpening() { if (scene !== 'opening') return; curTok && curTok.cancel(); homeFinal(); $('.door', doorsEl).focus({ preventScroll: true }); }
+
+/* ---------- write layout ---------- */
+function phraseWidth(key) { // width at 100px
+  ghost.innerHTML = inked.innerHTML = endedHTML(DOORS[key].label);
+  phraseEl.hidden = false; phraseEl.style.fontSize = '100px'; phraseEl.style.transform = '';
+  return phraseEl.offsetWidth / 100;
+}
+function computeWrite(key) {
+  const { W, m, mob, cin } = L, o = { key, mob };
+  // one size for every door phrase, fitted to the longest one, so the line never changes scale
+  const wMax = Math.max(...Object.keys(DOORS).map(phraseWidth));
+  const avail = mob ? W - 2 * m - cin * .78 : W * .52 - 28 - cin * 1.2 - m;
+  o.fs2 = clamp(avail / (wMax + .55), mob ? 16 : 22, mob ? 30 : 46);
+  const r = o.fs2 * .1; // the Dot is always .2em of the line it belongs to
+  o.panelLeft = mob ? m : Math.round(W * .52); o.panelW = mob ? W - 2 * m : Math.min(620, W - m - o.panelLeft);
+  if (mob) {
+    // mobile reads top-down: (doors) → prompt → the door phrase on its line → your lines right under it
+    let top = 18;
+    if (!key) { mini.hidden = false; mini.style.left = m + 'px'; mini.style.width = (W - 2 * m) + 'px'; mini.style.top = top + 'px'; top += (mini.offsetHeight || 150) + 22; }
+    const probeP = promptEl.cloneNode(); probeP.innerHTML = dotsHTML(key ? DOORS[key].prompt : GENERIC_PROMPT);
+    Object.assign(probeP.style, { position: 'absolute', visibility: 'hidden', width: o.panelW + 'px', margin: 0 }); probeP.removeAttribute('id');
+    stage.appendChild(probeP); const ph = probeP.offsetHeight; probeP.remove();
+    const cs = getComputedStyle(ta), fe = parseFloat(cs.fontSize), lh = parseFloat(cs.lineHeight) || fe * 1.55;
+    o.panelTop = top; o.promptMB = Math.round(cin + 20);
+    const y0 = top + ph + o.promptMB + 6 + lh / 2 + fe * .5; // first line of your text
+    o.ground = Math.round(y0 - lh * 1.15); o.base = o.ground - L.gOff;
+  } else { o.base = L.rows[0].base; o.ground = o.base + L.gOff; }
+  o.dot = { x: m + r, y: o.base - r, r };
+  if (key) {
+    const wp = phraseWidth(key);
+    o.phraseX = o.dot.x + r + o.fs2 * .32; o.phraseW = wp * o.fs2;
+    o.cinX = o.phraseX + o.phraseW + cin * .42;
+  } else { phraseEl.hidden = true; o.cinX = o.dot.x + cin * .8; }
+  return o;
+}
+function sizeStage() {
+  if (!WL) return;
+  const vh = window.innerHeight - navH();
+  const bottom = panel.offsetTop + panel.offsetHeight + (WL.mob ? 32 : 80);
+  stage.style.height = Math.max(WL.mob ? vh : L.H, bottom) + 'px';
+}
+function applyWrite(o, { enter } = {}) {
+  WL = o; writeKey = o.key; scene = 'write';
+  stage.classList.add('is-write'); setCam(0, 0); clearTimeout(bubbleTimer); skipBtn.hidden = true;
+  placeDot(o.dot); bigdot.getAnimations().forEach(a => a.cancel()); bigdot.style.transform = 'scale(1)';
+  if (o.key) {
+    ghost.innerHTML = inked.innerHTML = endedHTML(DOORS[o.key].label);
+    phraseEl.hidden = false; phraseEl.style.transform = ''; ghost.style.opacity = ''; inked.style.clipPath = 'none';
+    setLine(phraseEl, o.phraseX, o.base, o.fs2);
+  } else phraseEl.hidden = true;
+  fig.set({ x: o.cinX, y: o.ground, size: L.cin, facing: 1, air: 0 });
+  o.key ? fig.idle('stand', { ms: 2500 }) : fig.idle('think', { taps: true, ms: 8000 });
+  promptEl.innerHTML = dotsHTML(o.key ? DOORS[o.key].prompt : GENERIC_PROMPT);
+  mini.hidden = !!o.key;
+  panel.style.left = o.panelLeft + 'px'; panel.style.width = o.panelW + 'px';
+  let miniBottom = o.ground;
+  if (!o.key) {
+    if (o.mob) { /* placed above the prompt in computeWrite */ }
+    else { mini.style.left = L.m + 'px'; mini.style.width = (o.panelLeft - L.m - 56) + 'px'; mini.style.top = (o.ground + 56) + 'px'; }
+    miniBottom = mini.offsetTop + mini.offsetHeight;
+  }
+  panel.classList.add('on');
+  promptEl.style.marginBottom = o.mob ? o.promptMB + 'px' : '';
+  if (o.mob) panel.style.top = o.panelTop + 'px';
+  else { // your first line sits on the same red line as the door phrase
+    renderMirror();
+    const prev = panel.style.transition; panel.style.transition = 'none'; panel.style.top = '0px';
+    const b0 = $('#editor').offsetTop + $('.probe', mirror).offsetTop, fe = parseFloat(getComputedStyle(ta).fontSize);
+    panel.style.top = Math.max(24, o.ground - fe * .2 - b0) + 'px'; panel.offsetHeight; panel.style.transition = prev;
+  }
+  if (enter && !reduced()) { panel.classList.remove('enter'); void panel.offsetWidth; panel.classList.add('enter'); }
+  sizeStage();
+  renderMirror();
+  if (enter && !reduced()) { inkAnim = true; tween(650, p => writeInk(p), null, ease.out).then(() => { inkAnim = false; writeInk(); }); } else writeInk();
+  cinTarget(); if (!enter) snapCin();
+}
+
+/* ---------- door choice → write transition ---------- */
+async function chooseDoor(key, btn) {
+  if (scene === 'opening') skipOpening();
+  if (scene !== 'home') return;
+  const tok = newTok(); scene = 'trans'; clearTimeout(bubbleTimer);
+  fig.stopIdle();
+  if (reduced()) { goWrite(key, true); return; }
+  const S = window.scrollY; window.scrollTo(0, 0); setCam(0, -S);
+  const o = computeWrite(key);
+  const dx = L.dot.x - o.dot.x, dy = L.last.base - o.base;
+  setLine(phraseEl, o.phraseX + dx, o.base + dy, o.fs2);
+  inked.style.clipPath = 'inset(-40% 100% -40% 0)'; ghost.style.opacity = 1;
+  // FLIP: the chosen words leave their door and land on the line
+  const from = $('.t', btn).getBoundingClientRect(), to = phraseEl.getBoundingClientRect();
+  const sc = parseFloat(getComputedStyle(btn).fontSize) / o.fs2;
+  phraseEl.style.transformOrigin = '0 0';
+  $('.t', btn).style.visibility = 'hidden'; btn.style.borderTopColor = 'transparent';
+  [...$$('.door', doorsEl).filter(b => b !== btn), $('.q', doorsEl)].forEach(b => b.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' }));
+  bubble.classList.remove('on');
+  $$('.dpath', gPaths).forEach(p => p.classList.toggle('on', p.dataset.i === btn.dataset.i || p.dataset.i == $$('.door', doorsEl).indexOf(btn)));
+  gPaths.animate([{ opacity: 1 }, { opacity: 1, offset: .4 }, { opacity: 0 }], { duration: 700, fill: 'forwards' });
+  [lblDot, lblDoor, arr.dot, arr.door, replayBtn].forEach(e => e.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }));
+  const fly = tween(700, p => {
+    phraseEl.style.transform = `translate(${(from.left - to.left) * (1 - p)}px,${(from.top - to.top) * (1 - p)}px) scale(${sc + (1 - sc) * p})`;
+    ghost.style.opacity = 1 - .8 * p;
+  }, tok, ease.inOut);
+  await wait(380, tok); if (tok.cancelled) return;
+  fig.facing = 1;
+  const xFrom = fig.x, xTo = o.cinX + dx, lineFrom = L.cinEnd;
+  const lineIdx = inkLines.length - 1, baseLine = inkLines[lineIdx];
+  await fig.runTo(xTo, {
+    tok, speed: L.cin * 2.9, onStep: x => {
+      const p = (x - xFrom) / (xTo - xFrom);
+      setCam(-dx * p, -S + (S - dy) * p);
+      const rr = L.dot.r + (o.dot.r - L.dot.r) * Math.min(1, p * 1.6); // the Dot settles to the new line's scale
+      placeDot({ x: L.dot.x, y: L.last.base - rr, r: rr });
+      inkLines[lineIdx] = { x1: baseLine.x1, x2: Math.max(lineFrom + L.cin * .3, x + L.cin * .3), y: baseLine.y }; drawInk();
+      const right = o.phraseX + dx + o.phraseW; inked.style.clipPath = `inset(-40% ${Math.max(0, right - (x - L.cin * .22))}px -40% -12px)`;
+    },
+  });
+  await fly; if (tok.cancelled) return;
+  $$('.door, .q, .door .t', doorsEl).forEach(b => { b.getAnimations().forEach(a => a.cancel()); b.style.visibility = ''; b.style.borderTopColor = ''; });
+  [lblDot, lblDoor, arr.dot, arr.door, replayBtn].forEach(e => e.getAnimations().forEach(a => a.cancel()));
+  doorsEl.classList.remove('on');
+  goWrite(key, true);
+}
+function goWrite(key, enter) {
+  suppressRoute = true; location.hash = '#/write/' + key;
+  renderWrite(key, { enter });
+}
+async function chooseMini(key) {
+  if (scene !== 'write' || writeKey) return;
+  const tok = newTok();
+  mini.hidden = true;
+  const o = computeWrite(key);
+  history.replaceState(null, '', '#/write/' + key);
+  applyWrite(o); syncEditor();
+  if (!reduced()) { // Cin Ali writes the chosen phrase onto the line
+    fig.set({ x: o.dot.x + L.cin * .8 }); inked.style.clipPath = 'inset(-40% 100% -40% 0)';
+    phraseEl.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
+    await fig.runTo(o.cinX, { tok, onStep: x => {
+      inked.style.clipPath = `inset(-40% ${Math.max(0, o.phraseX + o.phraseW - (x - L.cin * .22))}px -40% -12px)`;
+    } });
+    if (tok.cancelled) return;
+    inked.style.clipPath = 'none'; fig.idle('stand', { ms: 1500 });
+  }
+  ta.focus({ preventScroll: true });
+}
+
+/* ---------- editor ---------- */
+let placed = false;
+function renderMirror() {
+  const v = ta.value; let html;
+  if (placed && v.trim()) {
+    const t = v.replace(/\s+$/, ''), rest = v.slice(t.length);
+    html = t.endsWith('.') ? dotsHTML(t.slice(0, -1)) + '<span class="p ghostp">.</span><span class="enddot over"></span>' + esc(rest)
+                           : dotsHTML(t) + '<span class="enddot"></span>' + esc(rest);
+  } else html = dotsHTML(v);
+  if (v === '') html = '<span class="ph">Start here</span>';
+  else if (v.endsWith('\n')) html += '​';
+  mirror.innerHTML = '<i class="probe"></i>' + html;
+}
+// The red line runs from the door phrase into your words: one line per line you write.
+function writeInk(p = 1) {
+  if (!WL || scene !== 'write') return;
+  const o = WL, cs = getComputedStyle(ta), fe = parseFloat(cs.fontSize), lh = parseFloat(cs.lineHeight);
+  const b0 = panel.offsetTop + $('#editor').offsetTop + $('.probe', mirror).offsetTop;
+  const y0 = b0 + fe * .2;
+  const rng = document.createRange(); rng.setStartAfter($('.probe', mirror)); rng.setEnd(mirror, mirror.childNodes.length);
+  const rr = rng.getBoundingClientRect(), rs = rng.getClientRects();
+  const n = rs.length ? 1 + Math.max(0, Math.round((rr.height - rs[0].height) / lh)) : 1;
+  const left = o.panelLeft - (o.mob ? 4 : 0), right = o.panelLeft + o.panelW + (o.mob ? 4 : 0);
+  const from = o.cinX + L.cin * .3;
+  const lines = [{ x1: -40, x2: from + (right - from) * p, y: o.ground }];
+  if (!o.mob) for (let i = 1; i < n; i++) lines.push({ x1: left, x2: left + (right - left) * p, y: y0 + i * lh });
+  else if (p >= 1) {
+    lines.push({ d: `M${right} ${o.ground} C${right + 12} ${o.ground} ${right + 12} ${y0} ${right} ${y0}` });
+    for (let i = 0; i < n; i++) lines.push({ x1: left, x2: right, y: y0 + i * lh });
+  }
+  inkLines = lines; drawInk();
+}
+
+/* Cin Ali walks with your caret: he stands just ahead of it on the line you're writing,
+   like the opening where the sentence appears behind him. The real caret stays. */
+const caretMirror = document.createElement('div');
+caretMirror.className = 'mirror'; caretMirror.style.visibility = 'hidden'; caretMirror.setAttribute('aria-hidden', 'true');
+$('#editor').appendChild(caretMirror);
+function caretPos() {
+  const v = ta.value, focused = document.activeElement === ta;
+  const c = focused ? ta.selectionStart : v.length;
+  const fe = parseFloat(getComputedStyle(ta).fontSize), ox = panel.offsetLeft, oy = panel.offsetTop + $('#editor').offsetTop;
+  const atEnd = !v.slice(c).trim();
+  const ed = placed && atEnd && $('.enddot', mirror);
+  if (ed) return { x: ox + ed.offsetLeft + fe * .34, y: oy + ed.offsetTop + fe * .2, collapsed: true };
+  caretMirror.innerHTML = esc(v.slice(0, c)) + '<i class="probe"></i>' + esc(v.slice(c)) + '​';
+  const mk = $('.probe', caretMirror);
+  return { x: ox + mk.offsetLeft, y: oy + mk.offsetTop + fe * .2, collapsed: !focused || ta.selectionStart === ta.selectionEnd };
+}
+const F = { on: false, tx: 0, ty: 0, ts: 0, hop: false, last: 0, still: 0, dim: false };
+function cinTarget() {
+  if (scene !== 'write' || !WL) return;
+  const inEditor = document.activeElement === ta || ta.value.length > 0;
+  if (!inEditor) { F.tx = WL.cinX; F.ty = WL.ground; F.ts = L.cin; F.dim = false; }
+  else {
+    const c = caretPos(), lh = parseFloat(getComputedStyle(ta).lineHeight), sz = clamp(lh * 1.15, 32, 46);
+    F.tx = c.x + sz * .42; F.ty = c.y; F.ts = sz; F.dim = !c.collapsed;
+  }
+  followCin();
+}
+function snapCin() { fig.stopIdle(); fig.set({ x: F.tx, y: F.ty, size: F.ts, pose: 'stand', facing: 1, air: 0 }); }
+function followCin() {
+  if (F.on) return; F.on = true; F.last = 0; F.still = 0; fig.stopIdle();
+  addTask(t => {
+    if (scene !== 'write') { F.on = false; return false; }
+    const dt = F.last ? Math.min(.05, (t - F.last) / 1000) : .016; F.last = t;
+    if (F.hop) return;
+    fig.svg.style.opacity = F.dim ? .3 : '';
+    if (Math.abs(fig.y - F.ty) > 2) { // a new line: a small carriage-return hop
+      if (reduced()) { fig.x = F.tx; fig.y = F.ty; fig.size = F.ts; fig.draw(true); return; }
+      F.hop = true;
+      const x1 = fig.x, y1 = fig.y, s1 = fig.size, tx = F.tx, ty = F.ty, ts = F.ts, h = Math.min(70, Math.abs(ty - y1) * .4 + 18);
+      fig.pose = 'jump'; fig.facing = tx >= x1 ? 1 : -1;
+      tween(Math.abs(ty - y1) > 120 ? 520 : 360, q => { fig.x = x1 + (tx - x1) * q; fig.y = y1 + (ty - y1) * q; fig.air = 4 * h * q * (1 - q); fig.size = s1 + (ts - s1) * q; fig.draw(true); }, null, ease.inOut)
+        .then(() => { fig.air = 0; fig.pose = 'stand'; fig.facing = 1; F.hop = false; fig.draw(true); });
+      return;
+    }
+    const dx = F.tx - fig.x;
+    const step = reduced() ? dx : Math.sign(dx) * Math.min(Math.abs(dx), Math.max(240, Math.abs(dx) * 5) * dt);
+    fig.size += (F.ts - fig.size) * (reduced() ? 1 : Math.min(1, dt * 7));
+    if (Math.abs(step) > .2) { fig.x += step; fig.pose = 'run'; fig.facing = step > 0 ? 1 : -1; fig.phase += Math.abs(step) / (fig.size * 1.2) * TAU; F.still = 0; }
+    else { F.still += dt; if (F.still > .12 && fig.pose === 'run') { fig.pose = 'stand'; fig.facing = 1; fig.draw(true); } }
+    fig.draw();
+    if (F.still > .5 && Math.abs(F.ts - fig.size) < .5) { F.on = false; fig.draw(true); return false; }
+  });
+}
+let cinRaf = 0;
+const queueCin = () => { cancelAnimationFrame(cinRaf); cinRaf = requestAnimationFrame(cinTarget); };
+['focus', 'blur', 'keyup', 'click', 'select'].forEach(ev => ta.addEventListener(ev, queueCin));
+document.addEventListener('selectionchange', () => { if (document.activeElement === ta) queueCin(); });
+function autoGrow() { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 1) + 'px'; sizeStage(); }
+let placing = false, inkAnim = false;
+function syncEditor() {
+  const has = ta.value.trim().length >= 2;
+  dotbtn.disabled = !has;
+  if (!has && placed) setPlaced(false);
+  const left = 400 - ta.value.length; countEl.textContent = left <= 60 ? `${left} left` : '';
+  renderMirror(); autoGrow();
+  if (!inkAnim) writeInk();
+  queueCin();
+  LS.set('dtd.draft', ta.value);
+}
+function setPlaced(on, { showActions = true } = {}) {
+  placed = on; dotbtn.setAttribute('aria-pressed', on);
+  hintEl.innerHTML = dotsHTML(on ? 'Your dot is placed. You can still change your words.' : 'When you’re ready, place your dot.');
+  if (!on || showActions) showActs(on);
+  renderMirror(); sizeStage();
+  if (!on) { writeInk(); queueCin(); }
+}
+function showActs(on) {
+  actions.hidden = !on;
+  if (on && !reduced()) { actions.classList.remove('enter'); void actions.offsetWidth; actions.classList.add('enter'); }
+  sizeStage();
+}
+// Placing the dot: Cin Ali steps past the end of your words and the Dot lands behind him, as in the opening.
+async function placeDotAction() {
+  if (dotbtn.disabled || placing) return;
+  if (placed) { ta.focus(); return; }
+  placing = true;
+  setPlaced(true, { showActions: false }); // the end Dot pops in the mirror
+  cinTarget();
+  await wait(reduced() ? 0 : 650);
+  showActs(true); placing = false;
+  live('Your dot is placed. Copy your words or add them to the Dot Wall.');
+  if (L.mob) actions.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' });
+}
+ta.addEventListener('input', syncEditor);
+ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); placeDotAction(); } });
+dotbtn.addEventListener('click', placeDotAction);
+$('#copyBtn').addEventListener('click', async e => {
+  const b = e.currentTarget;
+  try { await navigator.clipboard.writeText(ta.value); } catch { ta.select(); document.execCommand('copy'); ta.setSelectionRange(ta.value.length, ta.value.length); }
+  b.textContent = 'Copied'; live('Copied to your clipboard.'); setTimeout(() => b.textContent = 'Copy', 1800);
+});
+
+/* ---------- publish ---------- */
+const dlg = $('#pub'), pubForm = $('#pubForm'), pubName = $('#pubName'), pubCare = $('#pubCare');
+function noteHTML(n, { you = false, preview = false } = {}) {
+  const len = n.text.length, size = len <= 54 ? 'L' : len <= 130 ? 'M' : 'S';
+  const who = n.name ? esc(n.name) : '';
+  const right = preview ? '' : n.mine ? `<button data-down="${n.id}">Take my dot down</button>` : `<button data-report="${n.id}">Report</button>`;
+  const held = n.status === 'held' ? `<p class="held" data-dots>Only you can see this until it’s been read.</p>` : '';
+  const body = `${preview ? '' : `<span class="no">No. ${n.no}</span>`}<p class="txt">${endedHTML(n.text)}</p><div class="meta"><span>${who}</span>${right}</div>${held}`;
+  if (you) return `<article class="note you" id="you" tabindex="-1" aria-label="Your sentence"><div class="you-fig"><svg class="ink" id="youInk"><path class="arrow" id="youArr" pathLength="1"/></svg><div class="label" id="youLbl">This is you</div><svg class="cin" id="youCin"></svg></div><div>${body}</div></article>`;
+  return `<article class="note ${size}">${body}</article>`;
+}
+function updatePreview() { $('#pubPreview').innerHTML = noteHTML({ text: ta.value, name: pubName.value.trim(), no: 0 }, { preview: true }); }
+$('#addBtn').addEventListener('click', () => {
+  pubForm.hidden = false; pubCare.hidden = true; updatePreview(); dlg.showModal(); pubName.focus();
+});
+pubName.addEventListener('input', updatePreview);
+$('#pubCancel').addEventListener('click', () => dlg.close());
+$('#careOk').addEventListener('click', () => { dlg.close(); ta.focus(); });
+function screenText(t) { // stand-in for the real server-side screening
+  if (/(kill myself|suicide|end it all|want to die|kendimi öldür|intihar|ölmek istiyorum)/i.test(t)) return 'care';
+  if (/(https?:\/\/|www\.|\b\S+\.(com|net|org|io|co|tr)\b|@\w|\d[\d\s-]{7,}\d)/i.test(t)) return 'held';
+  if (/\b(fuck|shit|bitch|amk|siktir|orospu)\b/i.test(t)) return 'held';
+  return 'published';
+}
+pubForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  if ($('#pubHp').value) return; // honeypot
+  const go = $('#pubGo'); go.disabled = true;
+  await new Promise(r => setTimeout(r, 650));
+  go.disabled = false;
+  const status = screenText(ta.value);
+  if (status === 'care') { pubForm.hidden = true; pubCare.hidden = false; $('#careOk').focus(); return; }
+  const mine = LS.get('dtd.mine', []);
+  const no = 1000 + SAMPLES.length + mine.length;
+  const n = { id: Math.random().toString(36).slice(2, 9), text: ta.value.trim(), name: pubName.value.trim(), status, no, mine: true, at: Date.now() };
+  mine.unshift(n); LS.set('dtd.mine', mine);
+  dlg.close();
+  ta.value = ''; pubName.value = ''; LS.del('dtd.draft'); setPlaced(false); syncEditor();
+  location.hash = '#/wall/you/' + n.id;
+});
+
+/* ---------- wall ---------- */
+const SAMPLES = [
+  ['I signed the lease today. It’s small and the kitchen light flickers. It’s mine.', 'Mira'],
+  ['Stopped waiting for the right time to call my father', ''],
+  ['Leaving the job in March. Haven’t told anyone yet, so: hello, strangers.', ''],
+  ['Learning to swim at 41.', 'Deniz'],
+  ['Bu sefer yarım bırakmıyorum.', ''],
+  ['Two offers. One city I love, one I don’t. I think I already know.', ''],
+  ['Deleting the drafts I never sent you.', ''],
+  ['Started the novel. Chapter one is terrible. Chapter one exists.', 'J.'],
+  ['I’m letting go of being the one who always says yes', ''],
+  ['Today I chose the quieter life. It took me nine years to notice I wanted it.', 'Elif'],
+  ['I don’t know. That’s the whole sentence.', ''],
+  ['My mother’s recipes, in my handwriting, finally.', ''],
+  ['Saying no to the wedding I can’t afford, and to the people who would judge me for it.', ''],
+  ['Sold the car. Bought a bike. Legs hurt. Worth it.', 'Tomás'],
+  ['Kızgınlığımı burada bırakıyorum.', ''],
+  ['Applying to art school at 35, with a portfolio I made at the kitchen table after the kids were asleep. If you’re reading this, don’t wish me luck. Just know I sent it.', ''],
+  ['90 days sober today. Just writing it down somewhere.', ''],
+  ['I’m going to apologise to Sam. Tomorrow, not someday.', ''],
+  ['Planted something. Waiting.', ''],
+  ['Closing the shop after 22 years. The sign stays up one more week, for the regulars.', 'Hakan'],
+  ['The decision is made, I just haven’t said it out loud yet. This counts', ''],
+  ['Moving in with her. Keeping my own bookshelf.', ''],
+  ['I keep starting things to avoid finishing one thing. This is the one thing.', 'R.'],
+  ['First day without the cast.', ''],
+  ['No idea what comes next. Going to the sea to find out.', 'Aylin'],
+  ['I quit the group chat that made me feel small.', ''],
+  ['Writing this from the hospital waiting room. Whatever it is, we start from here.', ''],
+  ['Ending the subscription to my own worst thoughts. Trial period over.', ''],
+  ['Taking the night bus home after six years away', 'K.'],
+  ['Re-learning the piano with the same book I cried over at nine.', ''],
+].map(([text, name], i, all) => ({ id: 's' + i, text, name, no: 1000 + all.length - 1 - i, status: 'published' }));
+let wallShown = 14;
+function renderWall(youId) {
+  const mine = LS.get('dtd.mine', []);
+  const you = youId && mine.find(n => n.id === youId);
+  const others = [...mine.filter(n => n !== you && n.status === 'published'), ...SAMPLES];
+  $('#notes').innerHTML = (you ? noteHTML(you, { you: true }) : '') + others.slice(0, wallShown).map(n => noteHTML(n)).join('');
+  $('#moreBtn').parentElement.hidden = wallShown >= others.length;
+  dotify($('#notes'));
+  if (you) {
+    const box = $('.you-fig'), h = box.offsetHeight, w = box.offsetWidth;
+    const f = new Figure($('#youCin')); const sz = clamp(h * .6, 70, 112);
+    f.set({ x: sz * .55, y: h - 4, size: sz, pose: 'point', facing: 1 });
+    const lbl = $('#youLbl'), a = $('#youArr');
+    const lr = lbl.offsetLeft + lbl.offsetWidth;
+    a.setAttribute('d', innerWidth <= 700 ? arrowD(lr + 8, lbl.offsetTop + 16, lr + 30, h + 14, -.3)
+                                          : arrowD(lr + 6, lbl.offsetTop + 14, w + 14, h * .36, .25));
+    if (reduced()) { lbl.classList.add('on'); a.classList.add('on'); }
+    else { const t = new Token(); writeLabel(lbl, a, 600, t); f.idle('point', { ms: 2600 }); }
+  }
+}
+$('#moreBtn').addEventListener('click', () => { wallShown += 12; renderWall(currentYou); });
+$('#notes').addEventListener('click', e => {
+  const r = e.target.closest('[data-report]'), d = e.target.closest('[data-down]');
+  const n = e.target.closest('.note'); if (n && !r && !d) n.classList.toggle('open'); // tap a note to reveal Report on touch screens
+  if (r) { r.outerHTML = '<span>Thanks. Someone will read it</span>'; live('Thanks. Someone will read it.'); }
+  if (d && confirm('Take your dot down from the Dot Wall? This can’t be undone.')) {
+    LS.set('dtd.mine', LS.get('dtd.mine', []).filter(n => n.id !== d.dataset.down));
+    live('Your dot was taken down.'); location.hash = '#/wall';
+  }
+});
+
+/* ---------- routing ---------- */
+let suppressRoute = false, currentYou = null, fontsReady = false;
+function show(view) {
+  const onStage = view === 'home' || view === 'write';
+  stage.hidden = !onStage; $('#wall').hidden = view !== 'wall'; $('#about').hidden = view !== 'about';
+  $('#foot').hidden = onStage;
+  $$('[data-nav]').forEach(a => a.dataset.nav === view ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+}
+function renderHome(animate) { layoutHome(); stage.classList.remove('pending'); animate ? playOpening() : homeFinal(); }
+function renderWrite(key, { enter } = {}) {
+  layoutHome(); stage.classList.remove('pending'); stage.classList.add('is-write');
+  const draft = LS.get('dtd.draft', '');
+  if (draft && !ta.value) ta.value = draft;
+  applyWrite(computeWrite(key), { enter });
+  syncEditor();
+  if (enter && !L.mob) ta.focus({ preventScroll: true });
+  else if (enter) promptEl.focus({ preventScroll: true });
+}
+function route(e) {
+  if (!fontsReady) return;
+  if (suppressRoute) { suppressRoute = false; return; }
+  const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+  const view = ['write', 'wall', 'about'].includes(parts[0]) ? parts[0] : 'home';
+  if (curTok) curTok.cancel(); fig.stopIdle(); clearTimeout(bubbleTimer); skipBtn.hidden = true;
+  if (dlg.open) dlg.close();
+  show(view);
+  if (view === 'home') renderHome(!LS.get('dtd.seen', false) && !reduced());
+  else if (view === 'write') renderWrite(DOORS[parts[1]] ? parts[1] : null, { enter: !!e });
+  else if (view === 'wall') {
+    scene = 'wall'; currentYou = parts[1] === 'you' ? parts[2] : null; wallShown = 14;
+    window.scrollTo(0, 0); renderWall(currentYou);
+    if (currentYou && $('#you')) { $('#you').focus({ preventScroll: true }); live('Your sentence is on the Dot Wall.'); }
+    else if (e) $('#wallTitle').focus({ preventScroll: true });
+  } else { scene = 'about'; window.scrollTo(0, 0); if (e) $('#aboutTitle').focus({ preventScroll: true }); }
+}
+addEventListener('hashchange', route);
+
+/* ---------- events ---------- */
+skipBtn.addEventListener('click', skipOpening);
+replayBtn.addEventListener('click', () => playOpening());
+doorsEl.addEventListener('click', e => { const b = e.target.closest('.door'); if (b) chooseDoor(b.dataset.door, b); });
+const hoverPath = (b, on) => { if (scene !== 'home' || L.mob) return; const i = $$('.door', doorsEl).indexOf(b); const p = $(`.dpath[data-i="${i}"]`, gPaths); p && p.classList.toggle('on', on); };
+$$('.door', doorsEl).forEach(b => {
+  b.addEventListener('mouseenter', () => hoverPath(b, true)); b.addEventListener('mouseleave', () => hoverPath(b, false));
+  b.addEventListener('focus', () => hoverPath(b, true)); b.addEventListener('blur', () => hoverPath(b, false));
+});
+mini.addEventListener('click', e => { const b = e.target.closest('.mini-door'); if (b) chooseMini(b.dataset.door); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && scene === 'opening') skipOpening(); });
+
+let lastW = 0, lastH = 0, rT = 0;
+addEventListener('resize', () => {
+  clearTimeout(rT); rT = setTimeout(() => {
+    const W = stage.clientWidth || innerWidth, H = innerHeight;
+    if (W === lastW && (L.mob || Math.abs(H - lastH) < 2)) return;
+    lastW = W; lastH = H;
+    if (scene === 'opening' || scene === 'home' || scene === 'trans') { if (curTok) curTok.cancel(); layoutHome(); homeFinal(); }
+    else if (scene === 'write') { layoutHome(); applyWrite(computeWrite(writeKey)); syncEditor(); }
+  }, 150);
+});
+mq.addEventListener('change', applyRM);
+
+$('.proto-menu').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const p = b.dataset.p;
+  if (p === 'replay') { LS.del('dtd.seen'); if (location.hash && location.hash !== '#/') location.hash = '#/'; else route(); }
+  if (p === 'rm') { const o = LS.get('dtd.rm', null); LS.set('dtd.rm', o === null ? !mq.matches : (o === !mq.matches ? mq.matches : null)); if (LS.get('dtd.rm', 'x') === mq.matches) LS.del('dtd.rm'); applyRM(); }
+  if (p === 'font') { const ks = Object.keys(FONTS); LS.set('dtd.font', ks[(ks.indexOf(curFont()) + 1) % ks.length]); applyFont().then(() => document.fonts.ready).then(() => { LS.set('dtd.seen', true); route(); }); }
+  if (p === 'reset') { ['dtd.seen', 'dtd.mine', 'dtd.draft', 'dtd.rm'].forEach(LS.del); ta.value = ''; applyRM(); location.hash = '#/'; route(); }
+  b.closest('details').open = false;
+});
+
+/* ---------- typeface (prototype comparison) ---------- */
+const FONTS = { newsreader: ['Newsreader', 'Newsreader'], jakarta: ['Plus Jakarta Sans', 'Plus Jakarta Sans (logo)'], fraunces: ['Fraunces', 'Fraunces Soft'] };
+const curFont = () => FONTS[LS.get('dtd.font', 'jakarta')] ? LS.get('dtd.font', 'jakarta') : 'jakarta';
+function applyFont() {
+  const f = curFont();
+  f === 'newsreader' ? document.documentElement.removeAttribute('data-font') : document.documentElement.setAttribute('data-font', f);
+  $('#fontState').textContent = FONTS[f][1];
+  const fam = `"${FONTS[f][0]}"`;
+  return Promise.all([document.fonts.load(`300 100px ${fam}`), document.fonts.load(`400 100px ${fam}`), document.fonts.load(`italic 400 20px ${fam}`)]).catch(() => {});
+}
+
+/* ---------- boot ---------- */
+applyRM();
+const fontLoad = applyFont();
+dotify(document.body);
+Promise.all([
+  fontLoad, document.fonts.load('400 100px Newsreader'), document.fonts.load('italic 400 20px Newsreader'),
+  document.fonts.load('400 30px "Nanum Pen Script"'), document.fonts.load('400 14px "Plus Jakarta Sans"'),
+]).catch(() => {}).then(() => document.fonts.ready).then(() => {
+  fontsReady = true; lastW = stage.clientWidth; lastH = innerHeight; route();
+});
+})();
+</script>
+</body>
+</html>
