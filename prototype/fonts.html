@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeface comparison</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Plus+Jakarta+Sans:ital,wght@0,300..600;1,300..500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..600,0..100;1,9..144,300..500,0..100&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F5F2EA;--ink:#1B1A17;--muted:#6b665c;--rule:#d9d2c3;--red:#CC2525}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Plus Jakarta Sans',sans-serif;padding:32px clamp(20px,5vw,64px) 64px}
+h1{font:500 13px 'Plus Jakarta Sans';letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 28px}
+.opt{border-top:1px solid var(--rule);padding:28px 0 36px;display:grid;gap:22px}
+.tag{font:500 12px 'Plus Jakarta Sans';letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tag b{color:var(--ink);font-weight:600}
+.logo{font:300 30px 'Plus Jakarta Sans';letter-spacing:-.01em;display:flex;align-items:center}
+.logo i{width:.4em;height:.4em;border-radius:50%;background:var(--red);display:inline-block;margin-right:.14em}
+.row{display:flex;align-items:baseline;gap:28px;flex-wrap:wrap}
+.big{font-size:clamp(40px,7vw,68px);line-height:1;white-space:nowrap}
+.dot{display:inline-block;width:.2em;height:.2em;border-radius:50%;background:var(--red);margin-left:.04em}
+.p{color:var(--red)}
+.note{font-size:24px;line-height:1.28;max-width:34ch}
+.small{font-size:19px;line-height:1.45;max-width:46ch;color:#3d3a33}
+.f-news{font-family:'Newsreader';font-weight:400;letter-spacing:-.02em}
+.f-jak{font-family:'Plus Jakarta Sans';font-weight:300;letter-spacing:-.035em}
+.f-jak .note,.f-jak .small{font-weight:400;letter-spacing:-.015em}
+.f-fra{font-family:'Fraunces';font-weight:350;letter-spacing:-.015em;font-variation-settings:'SOFT' 100}
+</style>
+</head>
+<body>
+<h1>Typeface next to the logo</h1>
+
+<section class="opt f-news">
+  <div class="tag"><b>A · Newsreader</b> — current (editorial serif)</div>
+  <div class="row"><span class="logo"><i></i>the Door</span><span class="big">This is your sentence<span class="dot"></span></span></div>
+  <p class="note">Started the novel<span class="p">.</span> Chapter one is terrible<span class="p">.</span> Chapter one exists<span class="dot"></span></p>
+  <p class="small">Some sentences deserve an ending<span class="p">.</span> What are you ready to leave behind?</p>
+</section>
+
+<section class="opt f-jak">
+  <div class="tag"><b>B · Plus Jakarta Sans Light</b> — the logo’s own typeface</div>
+  <div class="row"><span class="logo"><i></i>the Door</span><span class="big">This is your sentence<span class="dot"></span></span></div>
+  <p class="note">Started the novel<span class="p">.</span> Chapter one is terrible<span class="p">.</span> Chapter one exists<span class="dot"></span></p>
+  <p class="small">Some sentences deserve an ending<span class="p">.</span> What are you ready to leave behind?</p>
+</section>
+
+<section class="opt f-fra">
+  <div class="tag"><b>C · Fraunces Soft</b> — rounded serif, between the two</div>
+  <div class="row"><span class="logo"><i></i>the Door</span><span class="big">This is your sentence<span class="dot"></span></span></div>
+  <p class="note">Started the novel<span class="p">.</span> Chapter one is terrible<span class="p">.</span> Chapter one exists<span class="dot"></span></p>
+  <p class="small">Some sentences deserve an ending<span class="p">.</span> What are you ready to leave behind?</p>
+</section>
+</body>
+</html>

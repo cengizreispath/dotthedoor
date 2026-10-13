@@ -1,105 +1,80 @@
-import type { Metadata } from 'next'
-import { Plus_Jakarta_Sans } from 'next/font/google'
-import Script from 'next/script'
-import './globals.css'
+import type { Metadata, Viewport } from 'next';
+import { Nanum_Pen_Script, Plus_Jakarta_Sans } from 'next/font/google';
+import Script from 'next/script';
+import Nav from '@/components/Nav';
+import './globals.css';
 
-const plusJakarta = Plus_Jakarta_Sans({ 
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-jakarta'
-})
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['300', '400', '500', '600'],
+  style: ['normal', 'italic'],
+  variable: '--font-jakarta',
+});
+const hand = Nanum_Pen_Script({ subsets: ['latin'], weight: '400', variable: '--font-hand' });
+
+const description = 'Every sentence ends with a dot. Write the one that comes next, keep it, or leave it on the Dot Wall.';
 
 export const metadata: Metadata = {
-  title: 'Dot the Door',
-  description: 'Your invitation to a fresh start—a place where every dot represents a pause, a pivot, and a pathway to undiscovered opportunities.',
-  keywords: ['fresh start', 'new beginnings', 'personal growth', 'life change', 'opportunities'],
+  metadataBase: new URL('https://dotthedoor.com'),
+  title: { default: 'Dot the Door', template: '%s · Dot the Door' },
+  description,
+  keywords: ['fresh start', 'new beginnings', 'next sentence', 'letting go', 'decisions', 'the Dot Wall'],
   authors: [{ name: 'Dot the Door' }],
-  openGraph: {
-    title: 'Dot the Door',
-    description: 'Your invitation to a fresh start—a place where every dot represents a pause, a pivot, and a pathway to undiscovered opportunities.',
-    url: 'https://dotthedoor.com',
-    siteName: 'Dot the Door',
-    locale: 'en_US',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Dot the Door',
-    description: 'Your invitation to a fresh start.',
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-}
+  openGraph: { title: 'Dot the Door', description, url: 'https://dotthedoor.com', siteName: 'Dot the Door', locale: 'en_US', type: 'website' },
+  twitter: { card: 'summary_large_image', title: 'Dot the Door', description },
+  robots: { index: true, follow: true },
+};
 
-// JSON-LD Structured Data
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  interactiveWidget: 'resizes-content',
+  themeColor: '#F5F2EA',
+};
+
 const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
     {
       '@type': 'WebSite',
       '@id': 'https://dotthedoor.com/#website',
-      'url': 'https://dotthedoor.com',
-      'name': 'Dot the Door',
-      'description': 'Your invitation to a fresh start—a place where every dot represents a pause, a pivot, and a pathway to undiscovered opportunities.',
-      'publisher': {
-        '@id': 'https://dotthedoor.com/#organization'
-      }
+      url: 'https://dotthedoor.com',
+      name: 'Dot the Door',
+      description,
+      publisher: { '@id': 'https://dotthedoor.com/#organization' },
     },
     {
       '@type': 'Organization',
       '@id': 'https://dotthedoor.com/#organization',
-      'name': 'Dot the Door',
-      'url': 'https://dotthedoor.com',
-      'email': 'info@dotthedoor.com',
-      'description': 'A philosophy and platform for fresh starts, new beginnings, and embracing undiscovered opportunities.'
+      name: 'Dot the Door',
+      url: 'https://dotthedoor.com',
+      email: 'info@dotthedoor.com',
+      description: 'A small place to write the sentence that comes next.',
     },
-    {
-      '@type': 'WebPage',
-      '@id': 'https://dotthedoor.com/#webpage',
-      'url': 'https://dotthedoor.com',
-      'name': 'Dot the Door - Your Invitation to a Fresh Start',
-      'isPartOf': {
-        '@id': 'https://dotthedoor.com/#website'
-      },
-      'about': {
-        '@id': 'https://dotthedoor.com/#organization'
-      },
-      'description': 'Step beyond the ordinary, embrace new journeys, and redefine your path.'
-    }
-  ]
-}
+  ],
+};
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+const GA_ID = 'G-3B6D8247MD';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${jakarta.variable} ${hand.variable}`}>
       <head>
-        {/* Google Analytics */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-3B6D8247MD"
-          strategy="afterInteractive"
-        />
+        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-3B6D8247MD');
-          `}
+          {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA_ID}');`}
         </Script>
-        
-        {/* JSON-LD Structured Data */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </head>
-      <body className={`${plusJakarta.variable} font-sans`}>{children}</body>
+      <body>
+        <a className="skiplink" href="#main">Skip to content</a>
+        <Nav />
+        <main id="main">{children}</main>
+      </body>
     </html>
-  )
+  );
 }
